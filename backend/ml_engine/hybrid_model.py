@@ -41,6 +41,13 @@ class ModelConfig:
     lstm_num_layers: int = 2
     lstm_dropout: float = 0.3
     sequence_length: int = 18  # Last 18 balls
+    # Transformer params (New)
+    use_transformer: bool = True
+    transformer_d_model: int = 128
+    transformer_nhead: int = 8
+    transformer_num_layers: int = 3
+    transformer_dim_feedforward: int = 256
+    transformer_dropout: float = 0.1
     
     # Training params
     batch_size: int = 64
@@ -440,6 +447,7 @@ class HybridEnsemble:
         # Initialize models
         self.xgb_model: Optional[xgb.XGBClassifier] = None
         self.lstm_model: Optional[MomentumLSTM] = None
+        self.transformer_model: Optional[TransformerModel] = None
         
         # Scalers
         self.static_scaler = StandardScaler()
@@ -462,6 +470,18 @@ class HybridEnsemble:
             num_layers=self.config.lstm_num_layers,
             dropout=self.config.lstm_dropout,
             output_size=32
+        )
+        return model.to(self.device)
+    
+    def build_transformer_model(self) -> TransformerModel:
+        """Build Transformer model for sequence features"""
+        model = TransformerModel(
+            input_dim=3,
+            d_model=self.config.transformer_d_model,
+            nhead=self.config.transformer_nhead,
+            num_layers=self.config.transformer_num_layers,
+            dim_feedforward=self.config.transformer_dim_feedforward,
+            dropout=self.config.transformer_dropout
         )
         return model.to(self.device)
     
@@ -573,6 +593,60 @@ class HybridEnsemble:
         # Load best model
         self.lstm_model.load_state_dict(torch.load('best_lstm.pth'))
         logger.info("LSTM training complete")
+        
+    def train_transformer(self,
+                          train_sequences: np.ndarray,
+                          train_labels: np.ndarray,
+                          val_sequences: Optional[np.ndarray] = None,
+                          val_labels: Optional[np.ndarray] = None):
+        """Train Transformer model"""
+        logger.info("Training Transformer model...")
+        
+        self.transformer_model = self.build_transformer_model()
+        
+        train_dataset = SequenceDataset(train_sequences, train_labels)
+        train_loader = DataLoader(train_dataset, batch_size=self.config.batch_size, shuffle=True)
+        
+        criterion = nn.BCEWithLogitsLoss()
+        optimizer = torch.optim.Adam(self.transformer_model.parameters(), lr=self.config.learning_rate)
+        
+        best_val_loss = float('inf')
+        for epoch in range(self.config.num_epochs):
+            self.transformer_model.train()
+            for batch_seq, batch_labels in train_loader:
+                batch_seq = batch_seq.to(self.device)
+                batch_labels = batch_labels.to(self.device)
+                
+                optimizer.zero_grad()
+                features = self.transformer_model(batch_seq)
+                predictions = features[:, 0]
+                loss = criterion(predictions, batch_labels.float())
+                loss.backward()
+                optimizer.step()
+            
+            if val_sequences is not None:
+                val_loss = self._validate_transformer(val_sequences, val_labels, criterion)
+                if val_loss < best_val_loss:
+                    best_val_loss = val_loss
+                    torch.save(self.transformer_model.state_dict(), 'best_transformer.pth')
+                    
+        self.transformer_model.load_state_dict(torch.load('best_transformer.pth'))
+        logger.info("Transformer training complete")
+
+    def _validate_transformer(self, 
+                              val_sequences: np.ndarray, 
+                              val_labels: np.ndarray, 
+                              criterion) -> float:
+        self.transformer_model.eval()
+        val_loader = DataLoader(SequenceDataset(val_sequences, val_labels), batch_size=self.config.batch_size)
+        total_loss = 0.0
+        with torch.no_grad():
+            for seq, labels in val_loader:
+                seq, labels = seq.to(self.device), labels.to(self.device)
+                features = self.transformer_model(seq)
+                loss = criterion(features[:, 0], labels.float())
+                total_loss += loss.item()
+        return total_loss / len(val_loader)
         
     def _validate_lstm(self, 
                        val_sequences: np.ndarray,

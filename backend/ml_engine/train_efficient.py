@@ -9,6 +9,9 @@ import torch
 from torch.utils.data import IterableDataset, DataLoader
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
+import mlflow
+import mlflow.pytorch
+import mlflow.xgboost
 from hybrid_model import HybridEnsemble, ModelConfig, CricsheetNormalizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -64,6 +67,20 @@ def train_efficiently(data_dir='data'):
     )
     config = ModelConfig()
     ensemble = HybridEnsemble(config)
+
+    # Initialize MLflow
+    mlflow.set_experiment("IPL_Prediction_Engine_V2")
+    
+    with mlflow.start_run(run_name=f"Hybrid_Train_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}"):
+        # Log Hyperparameters
+        mlflow.log_params({
+            "xgb_max_depth": config.xgb_params['max_depth'],
+            "xgb_lr": config.xgb_params['learning_rate'],
+            "lstm_hidden": config.lstm_hidden_size,
+            "transformer_layers": config.transformer_num_layers,
+            "batch_size": config.batch_size,
+            "learning_rate": config.learning_rate
+        })
 
     # 1. Get all JSON files (matches)
     all_files = glob.glob(os.path.join(data_dir, '*.json'))
@@ -124,6 +141,9 @@ def train_efficiently(data_dir='data'):
         else:
             xgb_model = xgb.train(params, dtrain, num_boost_round=10, xgb_model=xgb_model)
             
+        # Log XGBoost status to MLflow
+        mlflow.log_metric("xgb_chunk_processed", i//chunk_size + 1)
+            
         # Free memory!
         del chunk_dfs, combined_df, static_features, X_chunk, y_chunk, dtrain
         gc.collect()
@@ -161,12 +181,47 @@ def train_efficiently(data_dir='data'):
         batch_count += 1
         if batch_count % 100 == 0:
             logger.info(f"LSTM Batch {batch_count}: Loss = {loss.item():.4f}")
+            mlflow.log_metric("lstm_loss", loss.item(), step=batch_count)
             gc.collect() # Periodically clean garbage within epoch
             
+    # ---------------------------------------------------------
+    # PART C: Streaming Training for PyTorch Transformer
+    # ---------------------------------------------------------
+    logger.info("Starting Transformer Streaming Training...")
+    ensemble.transformer_model = ensemble.build_transformer_model()
+    
+    t_optimizer = torch.optim.Adam(ensemble.transformer_model.parameters(), lr=config.learning_rate)
+    ensemble.transformer_model.train()
+    
+    t_batch_count = 0
+    t_loader = DataLoader(train_dataset, batch_size=config.batch_size)
+    
+    for seq, label in t_loader:
+        seq, label = seq.to(ensemble.device), label.to(ensemble.device)
+        t_optimizer.zero_grad()
+        
+        features = ensemble.transformer_model(seq)
+        predictions = features[:, 0]
+        
+        loss = criterion(predictions, label.squeeze())
+        loss.backward()
+        t_optimizer.step()
+        
+        t_batch_count += 1
+        if t_batch_count % 100 == 0:
+            logger.info(f"Transformer Batch {t_batch_count}: Loss = {loss.item():.4f}")
+            mlflow.log_metric("transformer_loss", loss.item(), step=t_batch_count)
+            gc.collect()
+
     # Save the models
     logger.info("Training complete! Saving models...")
     os.makedirs('models', exist_ok=True)
     ensemble.save_models('models/hybrid_ensemble')
+    
+    # Log models to MLflow
+    mlflow.xgboost.log_model(ensemble.xgb_model, "xgb_static")
+    mlflow.pytorch.log_model(ensemble.lstm_model, "lstm_sequence")
+    mlflow.pytorch.log_model(ensemble.transformer_model, "transformer_attention")
     
 if __name__ == "__main__":
     import argparse

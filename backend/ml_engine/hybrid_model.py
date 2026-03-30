@@ -172,11 +172,20 @@ class CricsheetNormalizer:
         with open(filepath, 'r') as f:
             data = json.load(f)
         
+        # Determine teams for inferring bowling team
+        teams = data.get('info', {}).get('teams', [])
+        
         # Extract ball-by-ball data
         balls = []
         
         for inning_idx, inning in enumerate(data.get('innings', []), 1):
             inning_team = inning.get('team', '')
+            
+            # Infer bowling team as the other team in the match
+            if len(teams) > 1:
+                bowling_team = teams[0] if teams[1] == inning_team else teams[1]
+            else:
+                bowling_team = 'Unknown'
             
             for over_data in inning.get('overs', []):
                 over_num = over_data.get('over', 0)
@@ -194,6 +203,7 @@ class CricsheetNormalizer:
                         'wicket': 'wickets' in delivery,
                         'wicket_type': delivery.get('wickets', [{}])[0].get('kind') if 'wickets' in delivery else None,
                         'batting_team': inning_team,
+                        'bowling_team': bowling_team,
                     }
                     balls.append(ball)
         
@@ -431,6 +441,67 @@ class MomentumLSTM(nn.Module):
         output = self.fc(pooled)
         
         return output
+
+
+class PositionalEncoding(nn.Module):
+    """
+    Standard Positional Encoding for Transformer to inject sequence order info.
+    """
+    def __init__(self, d_model: int, dropout: float = 0.1, max_len: int = 100):
+        super().__init__()
+        self.dropout = nn.Dropout(p=dropout)
+        
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-np.log(10000.0) / d_model))
+        
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0) # (1, max_len, d_model)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x shape: (batch, seq_len, d_model)
+        x = x + self.pe[:, :x.size(1), :]
+        return self.dropout(x)
+
+
+class TransformerModel(nn.Module):
+    """
+    Attention-based Transformer Encoder for IPL momentum tracking.
+    """
+    def __init__(self, 
+                 input_dim: int, 
+                 d_model: int = 128, 
+                 nhead: int = 8, 
+                 num_layers: int = 3, 
+                 dim_feedforward: int = 256, 
+                 dropout: float = 0.1):
+        super().__init__()
+        self.input_proj = nn.Linear(input_dim, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=d_model, 
+            nhead=nhead, 
+            dim_feedforward=dim_feedforward, 
+            dropout=dropout, 
+            batch_first=True
+        )
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers)
+        
+        # Dense head to produce 32-dim latent embedding (matching LSTM output size)
+        self.fc = nn.Linear(d_model, 32)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # x shape: (batch, seq_len, input_dim)
+        x = self.input_proj(x)            # (batch, seq_len, d_model)
+        x = self.pos_encoder(x)           # (batch, seq_len, d_model)
+        x = self.transformer_encoder(x)   # (batch, seq_len, d_model)
+        
+        # Use average pooling across sequence as alternative to last timestep
+        x = x.mean(dim=1)                 # (batch, d_model)
+        return self.fc(x)                 # (batch, 32)
 
 
 class HybridEnsemble:

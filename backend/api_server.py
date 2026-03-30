@@ -17,16 +17,41 @@ from backend.ml_engine.agent_sim import MultiAgentSimulator
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global predictor
+    try:
+        logger.info("🚀 Starting API Server and loading ML Engine...")
+        app.state.redis_pool = redis.ConnectionPool(
+            host=REDIS_HOST, 
+            port=REDIS_PORT, 
+            db=REDIS_DB, 
+            password=REDIS_PASSWORD, 
+            decode_responses=True
+        )
+        predictor = RealTimePredictor()
+        logger.info("✅ ML Engine successfully loaded into memory.")
+    except Exception as e:
+        logger.error(f"❌ Failed to load Predictor: {e}")
+    yield
+    logger.info("Shutting down...")
+    if hasattr(app.state, 'redis_pool'):
+        app.state.redis_pool.disconnect()
+
 app = FastAPI(
     title="IPL Prediction Engine API",
     description="Real-time match win probability engine with XGBoost + LSTM",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS Middleware
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,15 +105,7 @@ REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 # Global Predictor Instance
 predictor: Optional[RealTimePredictor] = None
 
-@app.on_event("startup")
-async def startup_event():
-    global predictor
-    try:
-        logger.info("🚀 Starting API Server and loading ML Engine...")
-        predictor = RealTimePredictor()
-        logger.info("✅ ML Engine successfully loaded into memory.")
-    except Exception as e:
-        logger.error(f"❌ Failed to load Predictor: {e}")
+# Startup logic now handled by lifespan context manager
 
 @app.get("/health")
 async def health_check():
@@ -159,14 +176,17 @@ async def get_prediction(match_id: str):
     try:
         prediction = predictor.predict_live_match(match_id)
     
-        # Enrich with Multi-Agent Simulation features (MiroFish-style)
-        # We use current match data as seed for the swarm
-        agent_features = agent_swarm.simulate(prediction if "error" not in prediction else {})
-        prediction.update(agent_features)
-        
         if "error" in prediction:
             raise HTTPException(status_code=404, detail=prediction["error"])
+
+        # Enrich with Multi-Agent Simulation features (MiroFish-style)
+        # We use current match data as seed for the swarm
+        agent_features = agent_swarm.simulate(prediction)
+        prediction.update(agent_features)
+        
         return prediction
+    except HTTPException as http_exc:
+        raise http_exc
     except Exception as e:
         logger.error(f"Prediction Error for {match_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal inference error")
@@ -200,17 +220,14 @@ async def websocket_prediction(websocket: WebSocket, match_id: str):
     await websocket.accept()
     logger.info(f"WebSocket connected for match: {match_id}")
     
-    r = redis.Redis(
-        host=REDIS_HOST, 
-        port=REDIS_PORT, 
-        db=REDIS_DB, 
-        password=REDIS_PASSWORD, 
-        decode_responses=True
-    )
-    pubsub = r.pubsub()
-    pubsub.subscribe(f"ipl:predictions:{match_id}")
+    r = None
+    pubsub = None
     
     try:
+        r = redis.Redis(connection_pool=app.state.redis_pool)
+        pubsub = r.pubsub()
+        pubsub.subscribe(f"ipl:predictions:{match_id}")
+        
         # Initial push
         if predictor:
             initial_predict = predictor.predict_live_match(match_id)
@@ -232,8 +249,15 @@ async def websocket_prediction(websocket: WebSocket, match_id: str):
     except Exception as e:
         logger.error(f"WebSocket Error: {e}")
     finally:
-        pubsub.unsubscribe()
-        await websocket.close()
+        if pubsub:
+            pubsub.unsubscribe()
+            pubsub.close()
+        if r:
+            r.close()
+        try:
+            await websocket.close()
+        except RuntimeError:
+            pass
 
 if __name__ == "__main__":
     import uvicorn

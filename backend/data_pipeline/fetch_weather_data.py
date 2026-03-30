@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 
 # Paths
-BASE_DIR = Path("e:/IDEAS/ipl prediction engine")
+BASE_DIR = Path(os.getenv("PROJECT_ROOT", Path(__file__).parent.parent.parent))
 MATCHES_CSV = BASE_DIR / "dataset/archive/matches.csv"
 ENHANCED_DIR = BASE_DIR / "dataset/enhanced"
 WEATHER_CSV = ENHANCED_DIR / "weather_dataset.csv"

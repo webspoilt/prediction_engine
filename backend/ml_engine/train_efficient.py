@@ -32,6 +32,10 @@ class CricsheetIterableDataset(IterableDataset):
     def __iter__(self):
         for filepath in self.file_paths:
             try:
+                with open(filepath, 'r') as file:
+                    match_data = json.load(file)
+                    winner = match_data.get('info', {}).get('outcome', {}).get('winner')
+
                 # Load one match at a time
                 df = self.normalizer.load_cricsheet_data(filepath)
                 # Create match features
@@ -41,10 +45,12 @@ class CricsheetIterableDataset(IterableDataset):
                 # Yield ball-by-ball samples
                 for idx in range(len(sequence_features)):
                     seq = sequence_features.iloc[idx]['sequence']
+                    batting_team = df.iloc[idx]['batting_team']
                     
-                    # Placeholder label generation for demonstration
-                    # Should be replaced by actual match outcome extraction
-                    label = np.random.randint(0, 2) 
+                    if pd.isna(winner) or not batting_team:
+                        label = 0
+                    else:
+                        label = 1 if self.normalizer.normalize_team(batting_team) == self.normalizer.normalize_team(winner) else 0
                     
                     yield torch.FloatTensor(seq), torch.FloatTensor([label])
             except Exception as e:
@@ -115,7 +121,13 @@ def train_efficiently(data_dir='data'):
         chunk_dfs = []
         for f in chunk_files:
             try:
-                chunk_dfs.append(normalizer.load_cricsheet_data(f))
+                with open(f, 'r') as file:
+                    match_data = json.load(file)
+                    winner = match_data.get('info', {}).get('outcome', {}).get('winner')
+                
+                match_df = normalizer.load_cricsheet_data(f)
+                match_df['winner'] = winner
+                chunk_dfs.append(match_df)
             except json.JSONDecodeError:
                 continue
         
@@ -129,9 +141,18 @@ def train_efficiently(data_dir='data'):
         print("Feature Types:")
         print(static_features[normalizer.STATIC_FEATURE_COLS].dtypes)
         
+        # Extract Actual Labels
+        def get_label(row):
+            w = row.get('winner')
+            b = row.get('batting_team')
+            if pd.isna(w) or not b: return 0
+            return 1 if normalizer.normalize_team(b) == normalizer.normalize_team(w) else 0
+            
+        static_features['label'] = static_features.apply(get_label, axis=1)
+        
         # Use Standardized Columns List
         X_chunk = static_features[normalizer.STATIC_FEATURE_COLS].fillna(0).values
-        y_chunk = np.random.randint(0, 2, len(static_features)) # Placeholder
+        y_chunk = static_features['label'].values
         
         dtrain = xgb.DMatrix(X_chunk, label=y_chunk)
         

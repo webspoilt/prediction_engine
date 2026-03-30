@@ -1,7 +1,9 @@
 import pandas as pd
 from pathlib import Path
 
-BASE_DIR = Path("e:/IDEAS/ipl prediction engine")
+import os
+
+BASE_DIR = Path(os.getenv("PROJECT_ROOT", Path(__file__).parent.parent.parent))
 MATCHES_CSV = BASE_DIR / "dataset/archive/matches.csv"
 ENHANCED_DIR = BASE_DIR / "dataset/enhanced"
 ELO_CSV = ENHANCED_DIR / "team_elo.csv"

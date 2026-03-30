@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.venv312/
+
+# Data & Datasets (Protecting Large Files)
+data/
+dataset/archive*/
+dataset/*.csv
+dataset/enhanced/*.csv
+
+# Models (Large Binaries)
+models/
+backend/models/
+*.pth
+*.json
+*.pkl
+best_lstm.pth
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log

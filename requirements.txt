@@ -1,0 +1,10 @@
+pandas
+numpy
+xgboost
+torch
+torchvision
+torchaudio
+requests
+scikit-learn
+redis
+python-dotenv

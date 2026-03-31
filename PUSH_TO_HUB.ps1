@@ -11,8 +11,16 @@ hf auth login
 
 # 3. Push EVERYTHING to your Repo
 # This includes the api_server.py, models/, and all necessary pipeline code.
-Write-Host "🚀 Uploading Engine & Models to zeroday01/predictionsingle..." -ForegroundColor Green
-hf upload zeroday01/predictionsingle . --exclude ".venv/*" ".venv312/*" ".pytest_cache/*" ".git/*" "__pycache__/*" "*.log" "pytest_*.txt"
+Write-Host "🚀 Uploading Engine & Models to zeroday01/ipl_prediction_engine..." -ForegroundColor Green
+
+# Add new processed data and pro dashboard
+git add data/processed/ipl_matches.csv data/processed/ipl_ball.csv
+git add backend/static/pro.html
+git commit -m "Add consolidated IPL data and pro dashboard"
+git push origin main
+git push space main
+
+hf upload zeroday01/ipl_prediction_engine . --exclude ".venv/*" ".venv312/*" ".pytest_cache/*" ".git/*" "__pycache__/*" "*.log" "pytest_*.txt"
 Write-Host "✅ Success! Your engine is now synced to the Hub." -ForegroundColor Green
 
 # 🏁 Reminder:

@@ -840,7 +840,9 @@ class HybridEnsemble:
         os.makedirs(os.path.dirname(path_prefix), exist_ok=True)
         
         for file_name in files_to_download:
-            local_path = hf_hub_download(repo_id=repo_id, filename=file_name)
+            # We must specify the folder path in the repository
+            repo_file_path = f"models/{file_name}"
+            local_path = hf_hub_download(repo_id=repo_id, filename=repo_file_path)
             # Copy to our expected path_prefix location
             target_name = f"{path_prefix}_{file_name.split('_')[-1]}"
             import shutil
@@ -857,7 +859,7 @@ class HybridEnsemble:
         
         # Load LSTM
         self.lstm_model = self.build_lstm_model()
-        self.lstm_model.load_state_dict(torch.load(f"{path_prefix}_lstm.pth"))
+        self.lstm_model.load_state_dict(torch.load(f"{path_prefix}_lstm.pth", map_location=self.device))
         self.lstm_model.eval()
         
         # Load scalers

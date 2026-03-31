@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IPL Pro-Analytics | Premium Betting Insights</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+</head>
+<body>
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TOP BAR — Connection Status & Match Selector
+         ═══════════════════════════════════════════════════════════════════ -->
+    <header class="top-bar">
+        <div class="top-bar__brand">
+            <div class="brand-icon"><i class="fas fa-bolt"></i></div>
+            <div>
+                <h1 class="brand-title">IPL <span class="gold">Pro-Analytics</span></h1>
+                <p class="brand-subtitle">Premium Betting Insights Engine</p>
+            </div>
+        </div>
+
+        <div class="top-bar__controls">
+            <div class="match-selector">
+                <label for="match-select"><i class="fas fa-trophy"></i> Match</label>
+                <select id="match-select">
+                    <option value="MIvCSK">MI vs CSK — Wankhede</option>
+                    <option value="RCBvKKR">RCB vs KKR — Chinnaswamy</option>
+                    <option value="DCvPBKS">DC vs PBKS — Arun Jaitley</option>
+                </select>
+            </div>
+
+            <div class="connection-badge" id="conn-badge">
+                <span class="conn-dot"></span>
+                <span class="conn-text">Connecting…</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         MAIN DASHBOARD GRID
+         ═══════════════════════════════════════════════════════════════════ -->
+    <main class="dashboard-grid">
+
+        <!-- ─── PANEL 1: Live Win Odds ──────────────────────────────── -->
+        <section class="glass-panel odds-panel" id="odds-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-chart-line neon-green"></i> Live Win Odds</h2>
+                <span class="live-badge"><span class="pulse-dot"></span> LIVE</span>
+            </div>
+            <div class="odds-body">
+                <div class="odds-team">
+                    <div class="team-label">MI</div>
+                    <div class="odds-value neon-green" id="odds-home">—</div>
+                    <div class="implied" id="implied-home">—</div>
+                    <div class="odds-bar-container">
+                        <div class="odds-bar odds-bar--home" id="bar-home" style="width: 50%"></div>
+                    </div>
+                </div>
+                <div class="odds-vs">VS</div>
+                <div class="odds-team">
+                    <div class="team-label">CSK</div>
+                    <div class="odds-value gold" id="odds-away">—</div>
+                    <div class="implied" id="implied-away">—</div>
+                    <div class="odds-bar-container">
+                        <div class="odds-bar odds-bar--away" id="bar-away" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="odds-meta">
+                <span>Overround: <strong id="overround">—</strong></span>
+                <span>Sharp Edge: <strong id="sharp-edge" class="neon-green">—</strong></span>
+                <span>Blend: <strong id="blend-weights">XGB 60% · LSTM 40%</strong></span>
+            </div>
+        </section>
+
+        <!-- ─── PANEL 2: Market Volatility Gauge ────────────────────── -->
+        <section class="glass-panel volatility-panel" id="volatility-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-wave-square gold"></i> Market Volatility</h2>
+            </div>
+            <div class="gauge-container">
+                <svg class="gauge-svg" viewBox="0 0 200 120">
+                    <path class="gauge-bg" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="14" stroke-linecap="round"/>
+                    <path class="gauge-fill" id="gauge-arc" d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#00ff88" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 251"/>
+                    <text x="100" y="90" text-anchor="middle" class="gauge-value" id="gauge-value">—</text>
+                    <text x="100" y="110" text-anchor="middle" class="gauge-label" id="gauge-label">Low</text>
+                </svg>
+            </div>
+            <div class="volatility-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Tick Velocity</span>
+                    <span class="stat-value" id="tick-velocity">—</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Max Shift %</span>
+                    <span class="stat-value" id="max-shift">—</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Delta</span>
+                    <span class="stat-value" id="delta-label">→</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── PANEL 3: Over/Under Lines Table ─────────────────────── -->
+        <section class="glass-panel ou-panel" id="ou-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-arrows-up-down neon-green"></i> Over / Under Lines</h2>
+                <span class="update-time" id="ou-updated">—</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th>Market</th>
+                            <th>Line</th>
+                            <th>Over <span class="odds-col">(Odds)</span></th>
+                            <th>Under <span class="odds-col">(Odds)</span></th>
+                            <th>Projected</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ou-tbody">
+                        <tr class="skeleton-row"><td colspan="6">Loading…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ─── PANEL 4: Next Wicket Method ─────────────────────────── -->
+        <section class="glass-panel wicket-panel" id="wicket-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-baseball-bat-ball gold"></i> Next Wicket Method</h2>
+            </div>
+            <div class="wicket-methods" id="wicket-methods">
+                <div class="wicket-empty">Awaiting data…</div>
+            </div>
+        </section>
+
+        <!-- ─── PANEL 5: Prop-Bet Heatmap ───────────────────────────── -->
+        <section class="glass-panel heatmap-panel" id="heatmap-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-fire neon-green"></i> Prop-Bet Heatmap</h2>
+                <span class="panel-badge">Player Milestones</span>
+            </div>
+            <div class="heatmap-grid" id="heatmap-grid">
+                <div class="heatmap-empty">Connecting to live feed…</div>
+            </div>
+            <div class="heatmap-legend">
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff3333"></span> &lt; 20%</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ff8800"></span> 20–40%</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#ffd700"></span> 40–60%</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#88ff44"></span> 60–80%</span>
+                <span class="legend-item"><span class="legend-swatch" style="background:#00ff88"></span> &gt; 80%</span>
+            </div>
+        </section>
+
+        <!-- ─── PANEL 6: Match Scorecard ────────────────────────────── -->
+        <section class="glass-panel scorecard-panel" id="scorecard-panel">
+            <div class="panel-header">
+                <h2><i class="fas fa-clipboard-list gold"></i> Live Scorecard</h2>
+            </div>
+            <div class="scorecard-body" id="scorecard-body">
+                <div class="score-main">
+                    <div class="score-total">
+                        <span class="score-runs" id="score-runs">0</span>
+                        <span class="score-wickets">/ <span id="score-wickets">0</span></span>
+                    </div>
+                    <div class="score-overs">(<span id="score-overs">0.0</span> ov)</div>
+                </div>
+                <div class="score-extras" id="score-extras">
+                    <div class="extra-stat">
+                        <span>CRR</span>
+                        <strong id="stat-crr">0.00</strong>
+                    </div>
+                    <div class="extra-stat">
+                        <span>Phase</span>
+                        <strong id="stat-phase">—</strong>
+                    </div>
+                    <div class="extra-stat">
+                        <span>Proj.</span>
+                        <strong id="stat-projected">—</strong>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ─── FOOTER ─────────────────────────────────────────────────────── -->
+    <footer class="app-footer">
+        <span>IPL Pro-Analytics Engine v2.0</span>
+        <span>·</span>
+        <span>Hybrid XGBoost + LSTM</span>
+        <span>·</span>
+        <span id="footer-latency">Latency: —</span>
+    </footer>
+
+    <!-- ═══════════════════════════════════════════════════════════════════ -->
+    <script src="app.js"></script>
+</body>
+</html>

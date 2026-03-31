@@ -6,10 +6,10 @@ __pycache__/
 .venv312/
 
 # Data & Datasets
-data/match_jsons/
-dataset/archive*/
-dataset/*.csv
-dataset/enhanced/*.csv
+data/
+dataset/
+!data/README.txt
+!dataset/sample.csv
 
 # Large Models (Keep only essential binaries)
 # models/ and .pth are allowed for repo sync

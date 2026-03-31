@@ -4,6 +4,9 @@ import json
 import os
 import redis
 from typing import List, Dict
+import requests
+import pandas as pd
+from datetime import datetime
 from scrapling import Fetcher
 
 # Configure logging
@@ -13,6 +16,41 @@ logger = logging.getLogger(__name__)
 # Target URL for live scores
 LIVE_SCORES_URL = "https://www.cricbuzz.com/cricket-match/live-scores"
 IPL_SERIES_NAME = "Indian Premier League"
+
+class IPTLiveFeed:
+    BASE_URL = "https://ipl-stats-sports-mechanic.s3.ap-south-1.amazonaws.com/ipl/feeds/"
+    
+    @staticmethod
+    def get_upcoming_matches(season):
+        url = f"{IPTLiveFeed.BASE_URL}{season}-matchschedule.js?"
+        try:
+            resp = requests.get(url)
+            if resp.status_code != 200:
+                # Fallback to Cricbuzz scraping (implement as needed)
+                return None
+            return resp.json()
+        except requests.RequestException as e:
+            logger.error(f"Error fetching upcoming matches: {e}")
+            return None
+    
+    @staticmethod
+    def get_points_table(season):
+        url = f"{IPTLiveFeed.BASE_URL}stats/{season}-groupstandings.js?"
+        try:
+            resp = requests.get(url)
+            if resp.status_code != 200:
+                return None
+            return resp.json()
+        except requests.RequestException as e:
+            logger.error(f"Error fetching points table: {e}")
+            return None
+
+def trigger_retraining(new_match_id):
+    # Download new match JSON, run consolidate_data.py incrementally
+    # Then retrain your XGBoost+LSTM model
+    logger.info(f"Triggering retraining for new match completion: {new_match_id}")
+    pass
+
 
 class MatchDiscoveryService:
     """

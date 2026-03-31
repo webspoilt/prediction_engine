@@ -59,6 +59,14 @@ fastparquet>=2023.7.0
 orjson>=3.9.0
 ujson>=5.8.0
 msgpack>=1.0.5
+openai
+uvloop
+curl_cffi
+mlflow
+joblib
+nvidia-ml-py
+browserforge
+lxml
 
 # Logging & Debugging
 structlog>=23.0.0

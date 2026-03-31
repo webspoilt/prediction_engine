@@ -15,8 +15,9 @@ from fastapi.responses import FileResponse
 from backend.ml_engine.hybrid_model import RealTimePredictor
 from backend.ml_engine.agent_sim import MultiAgentSimulator
 from backend.infrastructure.db_manager import DatabaseManager
-from backend.data_pipeline.match_discovery import MatchDiscoveryService
+from backend.data_pipeline.match_discovery import MatchDiscoveryService, IPTLiveFeed
 from backend.data_pipeline.espn_scraper import ESPNCricinfoScraper
+from backend.api.stats_router import router as stats_router
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -46,7 +47,7 @@ async def lifespan(app: FastAPI):
         )
         
         # 3. Load Model from Hugging Face Hub
-        HF_REPO = os.getenv("HF_REPO_ID", "zeroday01/predictionsingle")
+        HF_REPO = os.getenv("HF_REPO_ID", "zeroday01/ipl_prediction_engine")
         predictor = RealTimePredictor(repo_id=HF_REPO)
         logger.info(f"✅ ML Engine successfully loaded from {HF_REPO}")
 
@@ -84,6 +85,9 @@ app.add_middleware(
 # Serve Static Dashboard
 os.makedirs("backend/static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+
+# Include stats router
+app.include_router(stats_router)
 
 @app.get("/")
 async def serve_dashboard():
@@ -194,6 +198,20 @@ async def health_check():
         res["components"]["redis"] = f"error: {str(e)}"
         
     return res
+
+@app.get("/upcoming/{season}")
+async def upcoming_matches(season: int):
+    data = IPTLiveFeed.get_upcoming_matches(season)
+    if not data:
+        raise HTTPException(status_code=503, detail="Live feed unavailable")
+    return data
+
+@app.get("/points/{season}")
+async def points_table(season: int):
+    data = IPTLiveFeed.get_points_table(season)
+    if not data:
+        raise HTTPException(status_code=503, detail="Points feed unavailable")
+    return data
 
 @app.get("/matches")
 async def list_matches():

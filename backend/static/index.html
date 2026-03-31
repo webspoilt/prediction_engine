@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPL Win Predictor | Live Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top left, #0f172a, #020617);
+            color: #f8fafc;
+        }
+
+        .glass {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .neon-blue { text-shadow: 0 0 10px rgba(56, 189, 248, 0.5); }
+        .neon-pink { text-shadow: 0 0 10px rgba(244, 114, 182, 0.5); }
+        
+        .progress-gradient {
+            background: linear-gradient(90deg, #f472b6, #38bdf8);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto space-y-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center glass p-6 rounded-3xl">
+            <div class="flex items-center gap-4">
+                <div class="bg-blue-500/20 p-3 rounded-2xl">
+                    <i data-lucide="activity" class="text-blue-400 w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">IPL <span class="text-blue-400">Predictor</span></h1>
+                    <p class="text-slate-400 text-sm">Real-time ML Probability Engine</p>
+                </div>
+            </div>
+            <div id="match-selector-container" class="hidden md:flex items-center gap-3">
+                <span class="text-slate-500 text-sm font-medium">Active Match:</span>
+                <select id="match-selector" class="bg-slate-800 border border-slate-700 text-sm rounded-xl px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="">Searching matches...</option>
+                </select>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
+                    <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                    <span class="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Live System</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Side: Live Score & Prob -->
+            <div class="lg:col-span-1 space-y-8">
+                <!-- Score Card -->
+                <div class="glass p-8 rounded-3xl relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-8">
+                        <div class="space-y-1">
+                            <p id="match-teams" class="text-sm font-semibold text-slate-400 uppercase tracking-widest">Select a match</p>
+                            <h2 id="live-overs" class="text-3xl font-bold">0.0 <span class="text-lg font-medium text-slate-500">Overs</span></h2>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-slate-400">Current Score</p>
+                            <p id="live-score" class="text-3xl font-bold text-blue-400 neon-blue">0/0</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Prediction Gauge -->
+                    <div class="mt-12 text-center">
+                        <div class="relative inline-flex flex-col items-center">
+                            <svg class="w-48 h-48 transform -rotate-90">
+                                <circle cx="96" cy="96" r="88" stroke="currentColor" stroke-width="12" fill="transparent" class="text-slate-800" />
+                                <circle id="prob-circle" cx="96" cy="96" r="88" stroke="url(#gradient)" stroke-width="12" fill="transparent" stroke-dasharray="552.92" stroke-dashoffset="552.92" class="transition-all duration-1000 ease-out" />
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#f472b6" />
+                                        <stop offset="100%" stop-color="#38bdf8" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="win-prob-text" class="text-4xl font-bold">0%</span>
+                                <span class="text-xs text-slate-400 uppercase font-semibold">Win Probability</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 grid grid-cols-2 gap-4">
+                        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                            <p class="text-xs text-slate-500 mb-1">XGBoost Conf.</p>
+                            <p id="xgb-conf" class="font-bold text-slate-200">--%</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
+                            <p class="text-xs text-slate-500 mb-1">LSTM Conf.</p>
+                            <p id="lstm-conf" class="font-bold text-slate-200">--%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Simulation Info (MiroFish Style) -->
+                <div class="glass p-8 rounded-3xl space-y-6">
+                    <div class="flex items-center gap-3 mb-2">
+                        <i data-lucide="bot" class="text-pink-400 w-5 h-5"></i>
+                        <h3 class="font-bold">Multi-Agent Projection</h3>
+                    </div>
+                    <div id="agent-simulation" class="space-y-4">
+                        <p class="text-sm text-slate-400 italic font-light">Awaiting live data to run swarm simulations...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Charts -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Main Probability Chart -->
+                <div class="glass p-8 rounded-3xl h-[500px] flex flex-col">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="line-chart" class="text-blue-400 w-5 h-5"></i>
+                            <h3 class="font-bold">Probability Trajectory</h3>
+                        </div>
+                        <div class="flex gap-2">
+                            <div class="flex items-center gap-1.5 px-3 py-1 bg-blue-500/10 rounded-lg">
+                                <span class="w-1.5 h-1.5 bg-blue-400 rounded-full"></span>
+                                <span class="text-[10px] font-bold text-blue-400 uppercase">Trend</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-1 w-full relative">
+                        <canvas id="probChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Match Metadata -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="glass p-6 rounded-3xl">
+                        <h4 class="text-sm font-semibold text-slate-400 mb-4 flex items-center gap-2">
+                            <i data-lucide="map-pin" class="w-4 h-4"></i> Venue Sentiment
+                        </h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-slate-300">Crowd Momentum</span>
+                                <div class="w-24 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                    <div class="bg-blue-400 h-full w-[70%]"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass p-6 rounded-3xl">
+                        <h4 class="text-sm font-semibold text-slate-400 mb-4 flex items-center gap-2">
+                            <i data-lucide="zap" class="w-4 h-4"></i> Inference Health
+                        </h4>
+                        <div class="flex items-center justify-between">
+                            <span class="text-slate-500 text-xs">Latency (Avg)</span>
+                            <span id="latency" class="text-xs font-mono font-bold text-slate-300">-- ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Chart.js Setup
+        const ctx = document.getElementById('probChart').getContext('2d');
+        const probChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Win Probability',
+                    data: [],
+                    borderColor: '#38bdf8',
+                    backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#64748b' } },
+                    y: { 
+                        min: 0, max: 100,
+                        grid: { color: 'rgba(148, 163, 184, 0.1)' }, 
+                        ticks: { color: '#64748b', callback: v => v + '%' }
+                    }
+                }
+            }
+        });
+
+        // State Management
+        let ws = null;
+        let activeMatchId = null;
+
+        // API Polling for active matches
+        async function fetchMatches() {
+            try {
+                const res = await fetch('/matches');
+                const matches = await res.json();
+                const selector = document.getElementById('match-selector');
+                
+                if (matches.length > 0) {
+                    selector.innerHTML = matches.map(m => `
+                        <option value="${m.match_id}">${m.teams.join(' vs ')}</option>
+                    `).join('');
+                    
+                    if (!activeMatchId) switchMatch(matches[0].match_id);
+                } else {
+                    selector.innerHTML = '<option value="">No Live Matches</option>';
+                }
+            } catch (e) {
+                console.error("Failed to fetch matches", e);
+            }
+        }
+
+        function switchMatch(id) {
+            if (ws) ws.close();
+            activeMatchId = id;
+            initWebSocket(id);
+        }
+
+        function initWebSocket(id) {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/predictions/${id}`);
+            
+            ws.onmessage = (event) => {
+                const data = json.parse(event.data);
+                updateUI(data);
+            };
+
+            ws.onclose = () => {
+                console.log("WS closed. Reconnecting...");
+                setTimeout(() => initWebSocket(id), 5000);
+            };
+        }
+
+        function updateUI(data) {
+            // Score & Overs
+            if (data.score) document.getElementById('live-score').innerText = data.score;
+            if (data.over !== undefined) document.getElementById('live-overs').innerHTML = `${data.over} <span class="text-lg font-medium text-slate-500">Overs</span>`;
+            if (data.teams) document.getElementById('match-teams').innerText = data.teams.join(' vs ');
+
+            // Probability Gauge
+            const prob = Math.round(data.win_probability * 100);
+            document.getElementById('win-prob-text').innerText = prob + '%';
+            
+            const circle = document.getElementById('prob-circle');
+            const circumference = 2 * Math.PI * 88;
+            const offset = circumference - (prob / 100) * circumference;
+            circle.style.strokeDashoffset = offset;
+
+            // Confidence Metrics
+            if (data.xgb_probability) document.getElementById('xgb-conf').innerText = Math.round(data.xgb_probability * 100) + '%';
+            if (data.lstm_probability) document.getElementById('lstm-conf').innerText = Math.round(data.lstm_probability * 100) + '%';
+            if (data.inference_time_ms) document.getElementById('latency').innerText = Math.round(data.inference_time_ms) + ' ms';
+
+            // Multi-Agent Simulation (Mocked based on prediction enrichment)
+            if (data.agent_simulation) {
+                const simContainer = document.getElementById('agent-simulation');
+                simContainer.innerHTML = data.agent_simulation.map(agent => `
+                    <div class="flex items-center justify-between p-3 bg-slate-800/30 rounded-xl border border-slate-700/30">
+                        <div class="flex items-center gap-3">
+                            <span class="w-1.5 h-1.5 bg-${agent.sentiment === 'bullish' ? 'blue' : 'pink'}-400 rounded-full animate-ping"></span>
+                            <span class="text-xs font-semibold text-slate-300">Agent #${agent.id.slice(0,4)}</span>
+                        </div>
+                        <span class="text-xs font-mono text-slate-500">${agent.prediction}</span>
+                    </div>
+                `).join('');
+            }
+
+            // Update Chart
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (probChart.data.labels.length > 20) {
+                probChart.data.labels.shift();
+                probChart.data.datasets[0].data.shift();
+            }
+            probChart.data.labels.push(time);
+            probChart.data.datasets[0].data.push(prob);
+            probChart.update('none');
+        }
+
+        // Initialize
+        setInterval(fetchMatches, 10000);
+        fetchMatches();
+
+        document.getElementById('match-selector').addEventListener('change', (e) => {
+            switchMatch(e.target.value);
+        });
+    </script>
+</body>
+</html>

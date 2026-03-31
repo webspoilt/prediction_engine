@@ -5,18 +5,19 @@ __pycache__/
 .venv/
 .venv312/
 
-# Data & Datasets (Protecting Large Files)
-data/
+# Data & Datasets
+data/match_jsons/
 dataset/archive*/
 dataset/*.csv
 dataset/enhanced/*.csv
 
-# Models (Large Binaries)
-models/
+# Large Models (Keep only essential binaries)
+# models/ and .pth are allowed for repo sync
+# we only keep the ones we intend to serve
+!models/*.pth
+!models/*.json
+!models/*.pkl
 backend/models/
-*.pth
-*.json
-*.pkl
 best_lstm.pth
 
 # IDEs

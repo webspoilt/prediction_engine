@@ -25,6 +25,8 @@ from typing import Dict, List, Tuple, Optional
 from dataclasses import dataclass
 import redis
 import time
+import os
+from huggingface_hub import hf_hub_download, HfApi, login
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -805,6 +807,47 @@ class HybridEnsemble:
             }, f)
         
         logger.info(f"Models saved to {path_prefix}")
+
+    def save_to_hub(self, repo_id: str, path_prefix: str, commit_message: str = "Update IPL models"):
+        """Save models locally first, then upload to Hugging Face Hub"""
+        self.save_models(path_prefix)
+        
+        api = HfApi()
+        files_to_upload = [
+            f"{path_prefix}_xgb.json",
+            f"{path_prefix}_lstm.pth",
+            f"{path_prefix}_scalers.pkl"
+        ]
+        
+        for file_path in files_to_upload:
+            if os.path.exists(file_path):
+                api.upload_file(
+                    path_or_fileobj=file_path,
+                    path_in_repo=os.path.basename(file_path),
+                    repo_id=repo_id,
+                    commit_message=commit_message
+                )
+        logger.info(f"✅ Models successfully pushed to Hub: {repo_id}")
+
+    def load_from_hub(self, repo_id: str, path_prefix: str):
+        """Download models from Hugging Face Hub then load them"""
+        files_to_download = [
+            f"{os.path.basename(path_prefix)}_xgb.json",
+            f"{os.path.basename(path_prefix)}_lstm.pth",
+            f"{os.path.basename(path_prefix)}_scalers.pkl"
+        ]
+        
+        os.makedirs(os.path.dirname(path_prefix), exist_ok=True)
+        
+        for file_name in files_to_download:
+            local_path = hf_hub_download(repo_id=repo_id, filename=file_name)
+            # Copy to our expected path_prefix location
+            target_name = f"{path_prefix}_{file_name.split('_')[-1]}"
+            import shutil
+            shutil.copy2(local_path, target_name)
+            
+        self.load_models(path_prefix)
+        logger.info(f"✅ Models successfully loaded from Hub: {repo_id}")
         
     def load_models(self, path_prefix: str):
         """Load all models and scalers"""
@@ -846,9 +889,16 @@ class RealTimePredictor:
     Connects to Redis for live data and produces predictions every 2-5 minutes.
     """
     
-    def __init__(self, model_path: str = 'models/hybrid_ensemble'):
+    def __init__(self, model_path: str = 'models/hybrid_ensemble', repo_id: Optional[str] = None):
         self.model = HybridEnsemble()
-        self.model.load_models(model_path)
+        if repo_id:
+            try:
+                self.model.load_from_hub(repo_id, model_path)
+            except Exception as e:
+                logger.warning(f"Failed to load from Hub, trying local: {e}")
+                self.model.load_models(model_path)
+        else:
+            self.model.load_models(model_path)
         self.redis_client = redis.Redis(decode_responses=True)
         self.normalizer = CricsheetNormalizer()
         self.normalizer.load_enhanced_features()

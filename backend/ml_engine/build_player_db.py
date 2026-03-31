@@ -99,6 +99,71 @@ def build_player_stats(csv_path: str, output_path: str):
     logger.info(f"Successfully built Player Stats DB with {len(bat_df)} batsmen and {len(bl_df)} bowlers!")
     logger.info(f"Saved to {output_path}")
 
+def update_with_new_players(json_files, db_path: str):
+    """
+    Scans new Cricsheet JSON match files for players not currently in the DB.
+    Initializes new players with the global baselines to prevent inference errors.
+    """
+    if not os.path.exists(db_path):
+        logger.error(f"Player DB not found at {db_path}. Run build full first.")
+        return
+
+    with open(db_path, 'r') as f:
+        player_db = json.load(f)
+
+    baselines = player_db.get('global_baselines', {
+        "bat_sr": 120.0, "bat_avg": 20.0, "bat_bound_pct": 10.0,
+        "bowl_econ": 8.0, "bowl_sr": 24.0, "bowl_avg": 30.0
+    })
+
+    batsmen_db = player_db.get('batsmen', {})
+    bowler_db = player_db.get('bowlers', {})
+
+    new_batsmen_count = 0
+    new_bowlers_count = 0
+
+    for file_path in json_files:
+        try:
+            with open(file_path, 'r') as f:
+                match_data = json.load(f)
+                
+            for inning in match_data.get('innings', []):
+                for over in inning.get('overs', []):
+                    for delivery in over.get('deliveries', []):
+                        batter = delivery.get('batter')
+                        bowler = delivery.get('bowler')
+                        
+                        if batter and batter not in batsmen_db:
+                            batsmen_db[batter] = {
+                                'runs': 0, 'boundaries': 0, 'balls_faced': 0, 'dismissals': 0,
+                                'strike_rate': baselines['bat_sr'], 
+                                'average': baselines['bat_avg'], 
+                                'boundary_pct': baselines['bat_bound_pct']
+                            }
+                            new_batsmen_count += 1
+                            logger.info(f"➕ Added new batsman from {os.path.basename(file_path)}: {batter}")
+                            
+                        if bowler and bowler not in bowler_db:
+                            bowler_db[bowler] = {
+                                'runs_conceded': 0, 'balls_bowled': 0, 'wickets': 0,
+                                'economy': baselines['bowl_econ'],
+                                'strike_rate': baselines['bowl_sr'],
+                                'average': baselines['bowl_avg']
+                            }
+                            new_bowlers_count += 1
+                            logger.info(f"➕ Added new bowler from {os.path.basename(file_path)}: {bowler}")
+        except Exception as e:
+            logger.warning(f"Error processing {file_path} for new players: {e}")
+
+    if new_batsmen_count > 0 or new_bowlers_count > 0:
+        player_db['batsmen'] = batsmen_db
+        player_db['bowlers'] = bowler_db
+        with open(db_path, 'w') as f:
+            json.dump(player_db, f, indent=4)
+        logger.info(f"✅ Updated Player DB: added {new_batsmen_count} batsmen, {new_bowlers_count} bowlers.")
+    else:
+        logger.info("ℹ️ No new players found in the recent matches.")
+
 if __name__ == "__main__":
     csv_in = r"e:\IDEAS\ipl prediction engine\dataset\archive (2)\all_ball_by_ball_data.csv"
     json_out = r"e:\IDEAS\ipl prediction engine\backend\ml_engine\player_stats_db.json"

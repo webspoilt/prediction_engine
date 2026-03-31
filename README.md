@@ -1,3 +1,14 @@
+---
+title: IPL Prediction Engine (Hybrid XGBoost + LSTM)
+emoji: 🏏
+colorFrom: blue
+colorTo: pink
+sdk: docker
+app_port: 8080
+pinned: false
+license: mit
+---
+
 # IPL Prediction Engine (Hybrid XGBoost + LSTM)
 
 A high-performance machine learning engine designed to predict IPL match outcomes and ball-by-ball win probabilities using a hybrid ensemble architecture.

@@ -8,10 +8,15 @@ import random
 import numpy as np
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Set
 from pydantic import BaseModel
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from backend.ml_engine.hybrid_model import RealTimePredictor
 from backend.ml_engine.agent_sim import MultiAgentSimulator
+from backend.infrastructure.db_manager import DatabaseManager
+from backend.data_pipeline.match_discovery import MatchDiscoveryService
+from backend.data_pipeline.espn_scraper import ESPNCricinfoScraper
 
 # Logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -21,9 +26,17 @@ from contextlib import asynccontextmanager
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global predictor
+    global predictor, db_manager
     try:
-        logger.info("🚀 Starting API Server and loading ML Engine...")
+        logger.info("🚀 Starting API Server and loading ML Engine from Hub...")
+        
+        # 1. Initialize DB
+        db_manager = DatabaseManager()
+        await db_manager.connect()
+        await db_manager.initialize_schema()
+        app.state.db = db_manager
+
+        # 2. Redis Setup
         app.state.redis_pool = redis.ConnectionPool(
             host=REDIS_HOST, 
             port=REDIS_PORT, 
@@ -31,14 +44,25 @@ async def lifespan(app: FastAPI):
             password=REDIS_PASSWORD, 
             decode_responses=True
         )
-        predictor = RealTimePredictor()
-        logger.info("✅ ML Engine successfully loaded into memory.")
+        
+        # 3. Load Model from Hugging Face Hub
+        HF_REPO = os.getenv("HF_REPO_ID", "zeroday01/predictionsingle")
+        predictor = RealTimePredictor(repo_id=HF_REPO)
+        logger.info(f"✅ ML Engine successfully loaded from {HF_REPO}")
+
+        # 4. Start Background Match Discovery
+        app.state.discovery_task = asyncio.create_task(run_discovery_loop(app))
+        
     except Exception as e:
-        logger.error(f"❌ Failed to load Predictor: {e}")
+        logger.error(f"❌ Failed during startup: {e}")
     yield
     logger.info("Shutting down...")
+    if hasattr(app.state, 'discovery_task'):
+        app.state.discovery_task.cancel()
     if hasattr(app.state, 'redis_pool'):
         app.state.redis_pool.disconnect()
+    if db_manager:
+        await db_manager.close()
 
 app = FastAPI(
     title="IPL Prediction Engine API",
@@ -56,6 +80,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve Static Dashboard
+os.makedirs("backend/static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="backend/static"), name="static")
+
+@app.get("/")
+async def serve_dashboard():
+    return FileResponse("backend/static/index.html")
 
 # Enrichment Layers
 agent_swarm = MultiAgentSimulator(num_agents=10)
@@ -102,8 +134,36 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 REDIS_DB = int(os.getenv("REDIS_DB", 0))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
 
-# Global Predictor Instance
+# Global Instances
 predictor: Optional[RealTimePredictor] = None
+db_manager: Optional[DatabaseManager] = None
+active_scrapers: Dict[str, asyncio.Task] = {}
+
+async def run_discovery_loop(app: FastAPI):
+    """Periodically scans for live IPL matches and starts scrapers"""
+    discovery = MatchDiscoveryService()
+    while True:
+        try:
+            matches = discovery._find_live_ipl_matches()
+            for m in matches:
+                m_id = m['match_id']
+                if m_id not in active_scrapers:
+                    logger.info(f"🔥 Auto-starting scraper for discovered match: {m['teams']}")
+                    scraper = ESPNCricinfoScraper()
+                    task = asyncio.create_task(scraper.start_polling(m_id, m['url']))
+                    active_scrapers[m_id] = task
+                    
+                    # Log match to Postgres
+                    await db_manager.save_match({
+                        'match_id': m_id,
+                        'teams': m['teams'].split(' vs '),
+                        'status': 'live',
+                        'metadata': {'url': m['url']}
+                    })
+        except Exception as e:
+            logger.error(f"Error in background discovery: {e}")
+        
+        await asyncio.sleep(300) # Check every 5 minutes
 
 # Startup logic now handled by lifespan context manager
 
@@ -179,11 +239,14 @@ async def get_prediction(match_id: str):
         if "error" in prediction:
             raise HTTPException(status_code=404, detail=prediction["error"])
 
-        # Enrich with Multi-Agent Simulation features (MiroFish-style)
-        # We use current match data as seed for the swarm
+        # Enrich with Multi-Agent Simulation
         agent_features = agent_swarm.simulate(prediction)
         prediction.update(agent_features)
         
+        # PERSIST TO POSTGRES
+        if db_manager:
+            asyncio.create_task(db_manager.save_prediction(prediction))
+            
         return prediction
     except HTTPException as http_exc:
         raise http_exc
@@ -261,4 +324,4 @@ async def websocket_prediction(websocket: WebSocket, match_id: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    uvicorn.run(app, host="0.0.0.0", port=7860)

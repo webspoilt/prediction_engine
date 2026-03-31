@@ -48,6 +48,8 @@ pyyaml>=6.0.0
 # Async & Concurrency
 asyncio-mqtt>=0.16.0
 aioredis>=2.0.0
+huggingface_hub
+asyncpg
 
 # Data Processing
 pyarrow>=12.0.0

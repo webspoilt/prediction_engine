@@ -8,3 +8,5 @@ requests
 scikit-learn
 redis
 python-dotenv
+huggingface_hub
+asyncpg

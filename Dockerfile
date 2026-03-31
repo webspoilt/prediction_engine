@@ -28,7 +28,7 @@ COPY . .
 ENV PYTHONPATH=/app
 
 # Expose the API port
-EXPOSE 8080
+EXPOSE 7860
 
 # Command to run the API server
-CMD ["uvicorn", "backend.api_server:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "backend.api_server:app", "--host", "0.0.0.0", "--port", "7860"]

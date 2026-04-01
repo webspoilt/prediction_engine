@@ -44,6 +44,14 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("🚀 Starting IPL Prediction Engine...")
 
+        # 0. Initialize Data Structures
+        try:
+            from backend.ml_engine.analyze_recent_matches import ensure_base_csvs_exist
+            ensure_base_csvs_exist()
+            logger.info("✅ Base data structures initialized")
+        except Exception as e:
+            logger.warning(f"⚠️ Failed to auto-initialize base data: {e}")
+
         # 1. Database (optional — degrades gracefully)
         try:
             from backend.infrastructure.db_manager import DatabaseManager

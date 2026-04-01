@@ -12,7 +12,7 @@ from sklearn.model_selection import train_test_split
 import mlflow
 import mlflow.pytorch
 import mlflow.xgboost
-from hybrid_model import HybridEnsemble, ModelConfig, CricsheetNormalizer
+from backend.ml_engine.hybrid_model import HybridEnsemble, ModelConfig, CricsheetNormalizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -57,7 +57,9 @@ class CricsheetIterableDataset(IterableDataset):
                 logger.warning(f"Failed processing {filepath}: {e}")
             finally:
                 # Force garbage collection to free RAM
-                del df, static_features, sequence_features
+                for var_name in ['df', 'static_features', 'sequence_features']:
+                    if var_name in locals():
+                        del locals()[var_name]
                 gc.collect()
 
 def train_efficiently(data_dir='data'):
@@ -87,23 +89,16 @@ def train_efficiently(data_dir='data'):
             "batch_size": config.batch_size,
             "learning_rate": config.learning_rate
         })
+        _run_training(config, ensemble, normalizer, train_files, data_dir)
 
-    # 1. Get all JSON files (matches)
-    all_files = glob.glob(os.path.join(data_dir, '*.json'))
-    if not all_files:
-        logger.error(f"No JSON files found in {data_dir}. Please download them first.")
-        return
+def _run_training(config, ensemble, normalizer, train_files, data_dir):
+    """Inner training function — runs inside MLflow context."""
 
-    logger.info(f"Found {len(all_files)} match files. Processing in chunks to save RAM.")
-
-    # Split files into training and validation sets
-    train_files, val_files = train_test_split(all_files, test_size=0.1, random_state=42)
-    
-    # ---------------------------------------------------------
-    # TESTING: Limit to 30 matches to quickly verify player stats 
-    # integration. REMOVE THIS FOR FULL PRODUCTION TRAINING.
-    # ---------------------------------------------------------
-    train_files = train_files[:30]
+    # Training limit configurable via env var (0 = no limit)
+    max_matches = int(os.getenv('MAX_TRAIN_MATCHES', '0'))
+    if max_matches > 0:
+        train_files = train_files[:max_matches]
+        logger.info(f"Training limited to {max_matches} matches (set MAX_TRAIN_MATCHES=0 for full)")
 
     # ---------------------------------------------------------
     # PART A: Incremental Training for XGBoost

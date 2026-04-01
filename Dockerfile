@@ -11,36 +11,23 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgl1 \
-    libglib2.0-0 \
     libgomp1 \
-    tesseract-ocr \
-    libtesseract-dev \
-    libnss3 \
-    libatk1.0-0 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdrm2 \
-    libxcomposite1 \
-    libxdamage1 \
-    libxfixes3 \
-    libxrandr2 \
-    libgbm1 \
-    libpango-1.0-0 \
-    libcairo2 \
-    libasound2 \
+    curl \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies
 COPY backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt && \
-    playwright install chromium
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entire project
 COPY . .
 
 # Set PYTHONPATH to include the project root
 ENV PYTHONPATH=/app
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -f http://localhost:7860/health || exit 1
 
 # Expose the API port
 EXPOSE 7860

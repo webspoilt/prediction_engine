@@ -223,7 +223,7 @@ async def run_discovery_loop(app: FastAPI):
     await asyncio.sleep(5)  # Let startup finish
     while True:
         try:
-            from backend.data_pipeline.match_discovery import MatchDiscoveryService, IPTLiveFeed
+            from backend.data_pipeline.match_discovery import MatchDiscoveryService
             discovery = MatchDiscoveryService()
             matches = discovery._find_live_ipl_matches()
             logger.info(f"🔎 Discovery scan: {len(matches)} live IPL matches found")

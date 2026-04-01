@@ -596,6 +596,27 @@ class HybridEnsemble:
         
         return calibrated_ensemble
 
+    def build_lstm_model(self) -> MomentumLSTM:
+        """Initialize MomentumLSTM with config params"""
+        return MomentumLSTM(
+            input_size=3,  # runs, wicket, over
+            hidden_size=self.config.lstm_hidden_size,
+            num_layers=self.config.lstm_num_layers,
+            dropout=self.config.lstm_dropout,
+            output_size=32
+        ).to(self.device)
+
+    def build_transformer_model(self) -> TransformerModel:
+        """Initialize TransformerModel with config params"""
+        return TransformerModel(
+            input_dim=3,
+            d_model=self.config.transformer_d_model,
+            nhead=self.config.transformer_nhead,
+            num_layers=self.config.transformer_num_layers,
+            dim_feedforward=self.config.transformer_dim_feedforward,
+            dropout=self.config.transformer_dropout
+        ).to(self.device)
+
     def train_static_ensemble(self, 
                               X_train: np.ndarray, 
                               y_train: np.ndarray,
@@ -849,11 +870,6 @@ class HybridEnsemble:
         result['impact_factors'] = self._explain_prediction(static_prob, raw_context or {})
         
         return result
-        
-    def _explain_prediction(self, win_prob: float, context: Dict) -> List[Dict]:
-        """Generate SHAP-like impact factors based on feature states."""
-        # This maps the logic the user requested:
-        # e.g., 'home_advantage', 't1_form', 'h2h', 'toss_factor'
         
         t1_elo = context.get('bat_elo', 1500)
         t2_elo = context.get('bowl_elo', 1500)

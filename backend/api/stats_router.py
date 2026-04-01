@@ -72,8 +72,8 @@ async def get_player_stats(name: str):
         "bowling": bowling_stats
     }
 
-@router.get("/matches")
-async def get_matches(season: Optional[int] = None):
+@router.get("/archive")
+async def get_historical_matches(season: Optional[int] = None):
     if matches_df.empty:
         return {"matches": []}
         

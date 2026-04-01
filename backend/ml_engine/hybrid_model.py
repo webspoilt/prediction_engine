@@ -1052,8 +1052,13 @@ def train_example():
     )
     
     # Prepare labels (match outcomes)
-    # This would come from match metadata
-    labels = np.random.randint(0, 2, len(static_df))  # Placeholder
+    # This must match the length of static_df
+    # In a real run, this would be extraced from info.outcome in Cricsheet data
+    labels = np.zeros(len(static_df)) 
+    if not static_df.empty:
+        # Example: assume team1 won everything for this dummy example
+        labels[:] = 1
+
     
     # Split data
     X_train, X_val, y_train, y_val = train_test_split(

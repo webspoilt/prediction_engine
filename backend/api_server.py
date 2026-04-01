@@ -20,6 +20,17 @@ from backend.config import settings
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
+# Custom JSON Encoder for NumPy types (Pro-fix for ML serialization 500s)
+class NumPyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return super(NumPyEncoder, self).default(obj)
+
 # ─── Lifespan ─────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
@@ -290,16 +301,21 @@ async def list_matches():
         match_ids = [k.split(":")[-1] for k in keys]
         matches = []
         for mid in match_ids:
-            last_ball = r.xrevrange(f"ipl:balls:{mid}", count=1)
-            if last_ball:
-                data = last_ball[0][1]
-                matches.append({
-                    "match_id": mid,
-                    "teams": [data.get('batting_team', 'N/A'), data.get('bowling_team', 'N/A')],
-                    "inning": data.get('inning'),
-                    "score": f"{data.get('runs', 0)}/{data.get('wicket', 0)}",
-                    "over": data.get('over')
-                })
+            try:
+                last_ball = r.xrevrange(f"ipl:balls:{mid}", count=1)
+                if last_ball:
+                    data = last_ball[0][1]
+                    # Explicit casting prevents 500 serialization errors from NumPy types
+                    matches.append({
+                        "match_id": str(mid),
+                        "teams": [str(data.get('batting_team', 'N/A')), str(data.get('bowling_team', 'N/A'))],
+                        "inning": int(data.get('inning', 1)) if data.get('inning') else 1,
+                        "score": f"{data.get('runs', 0)}/{data.get('wicket', 0)}",
+                        "over": float(data.get('over', 0.0)) if data.get('over') else 0.0
+                    })
+            except Exception as e:
+                logger.warning(f"Error parsing match {mid} from Redis: {e}")
+                continue
         return matches
     except Exception as e:
         logger.error(f"List matches error: {e}")

@@ -9,9 +9,14 @@ import torch
 from torch.utils.data import IterableDataset, DataLoader
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
-import mlflow
-import mlflow.pytorch
-import mlflow.xgboost
+try:
+    import mlflow
+    import mlflow.pytorch
+    import mlflow.xgboost
+    MLFLOW_AVAILABLE = True
+except ImportError:
+    logger.warning("⚠️ mlflow not found. Training will proceed without remote tracking.")
+    MLFLOW_AVAILABLE = False
 from backend.ml_engine.hybrid_model import HybridEnsemble, ModelConfig, CricsheetNormalizer
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -76,20 +81,6 @@ def train_efficiently(data_dir='data'):
     config = ModelConfig()
     ensemble = HybridEnsemble(config)
 
-    # Initialize MLflow
-    mlflow.set_experiment("IPL_Prediction_Engine_V2")
-    
-    with mlflow.start_run(run_name=f"Hybrid_Train_{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}"):
-        # Log Hyperparameters
-        mlflow.log_params({
-            "xgb_max_depth": config.xgb_params['max_depth'],
-            "xgb_lr": config.xgb_params['learning_rate'],
-            "lstm_hidden": config.lstm_hidden_size,
-            "transformer_layers": config.transformer_num_layers,
-            "batch_size": config.batch_size,
-            "learning_rate": config.learning_rate
-        })
-        _run_training(config, ensemble, normalizer, train_files, data_dir)
 
 def _run_training(config, ensemble, normalizer, train_files, data_dir):
     """Inner training function — runs inside MLflow context."""
@@ -158,7 +149,11 @@ def _run_training(config, ensemble, normalizer, train_files, data_dir):
             xgb_model = xgb.train(params, dtrain, num_boost_round=10, xgb_model=xgb_model)
             
         # Log XGBoost status to MLflow
-        mlflow.log_metric("xgb_chunk_processed", i//chunk_size + 1)
+        if MLFLOW_AVAILABLE:
+            try:
+                mlflow.log_metric("xgb_chunk_processed", i//chunk_size + 1)
+            except Exception:
+                pass
             
         # Free memory!
         del chunk_dfs, combined_df, static_features, X_chunk, y_chunk, dtrain
@@ -197,7 +192,11 @@ def _run_training(config, ensemble, normalizer, train_files, data_dir):
         batch_count += 1
         if batch_count % 100 == 0:
             logger.info(f"LSTM Batch {batch_count}: Loss = {loss.item():.4f}")
-            mlflow.log_metric("lstm_loss", loss.item(), step=batch_count)
+            if MLFLOW_AVAILABLE:
+                try:
+                    mlflow.log_metric("lstm_loss", loss.item(), step=batch_count)
+                except Exception:
+                    pass
             gc.collect() # Periodically clean garbage within epoch
             
     # ---------------------------------------------------------
@@ -226,7 +225,11 @@ def _run_training(config, ensemble, normalizer, train_files, data_dir):
         t_batch_count += 1
         if t_batch_count % 100 == 0:
             logger.info(f"Transformer Batch {t_batch_count}: Loss = {loss.item():.4f}")
-            mlflow.log_metric("transformer_loss", loss.item(), step=t_batch_count)
+            if MLFLOW_AVAILABLE:
+                try:
+                    mlflow.log_metric("transformer_loss", loss.item(), step=t_batch_count)
+                except Exception:
+                    pass
             gc.collect()
 
     # Save the models
@@ -235,9 +238,13 @@ def _run_training(config, ensemble, normalizer, train_files, data_dir):
     ensemble.save_models('models/hybrid_ensemble')
     
     # Log models to MLflow
-    mlflow.xgboost.log_model(ensemble.xgb_model, "xgb_static")
-    mlflow.pytorch.log_model(ensemble.lstm_model, "lstm_sequence")
-    mlflow.pytorch.log_model(ensemble.transformer_model, "transformer_attention")
+    if MLFLOW_AVAILABLE:
+        try:
+            mlflow.xgboost.log_model(ensemble.xgb_model, "xgb_static")
+            mlflow.pytorch.log_model(ensemble.lstm_model, "lstm_sequence")
+            mlflow.pytorch.log_model(ensemble.transformer_model, "transformer_attention")
+        except Exception as e:
+            logger.warning(f"MLflow model logging failed: {e}")
     
 if __name__ == "__main__":
     import argparse

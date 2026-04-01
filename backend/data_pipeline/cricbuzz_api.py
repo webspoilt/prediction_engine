@@ -13,10 +13,13 @@ class CricbuzzAPI:
     """
     BASE_URL = "https://www.cricbuzz.com/match-api"
     HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.cricbuzz.com/",
         "Origin": "https://www.cricbuzz.com",
-        "Referer": "https://www.cricbuzz.com/cricket-match/live-scores"
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache"
     }
 
     @classmethod

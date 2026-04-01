@@ -640,12 +640,12 @@
             "boundary_pct": 0.0
         },
         "Abhishek Sharma": {
-            "runs": 1816,
-            "boundaries": 275,
-            "balls_faced": 1114,
-            "dismissals": 66.0,
-            "strike_rate": 163.01615798922802,
-            "average": 27.515151515151516,
+            "runs": 1846,
+            "boundaries": 278,
+            "balls_faced": 1140,
+            "dismissals": 67.0,
+            "strike_rate": 161.9298245614035,
+            "average": 27.55223880597015,
             "boundary_pct": 24.685816876122082
         },
         "Abishek Porel": {
@@ -883,12 +883,12 @@
             "boundary_pct": 16.49484536082474
         },
         "B Sai Sudharsan": {
-            "runs": 1793,
-            "boundaries": 236,
-            "balls_faced": 1229,
-            "dismissals": 35.0,
-            "strike_rate": 145.89096826688365,
-            "average": 51.22857142857143,
+            "runs": 1805,
+            "boundaries": 238,
+            "balls_faced": 1237,
+            "dismissals": 37.0,
+            "strike_rate": 145.91754244139045,
+            "average": 48.78378378378378,
             "boundary_pct": 19.202603742880388
         },
         "B Stanlake": {
@@ -4222,12 +4222,12 @@
             "boundary_pct": 0.0
         },
         "Priyansh Arya": {
-            "runs": 545,
+            "runs": 557,
             "boundaries": 91,
-            "balls_faced": 299,
-            "dismissals": 18.0,
-            "strike_rate": 182.2742474916388,
-            "average": 30.27777777777778,
+            "balls_faced": 313,
+            "dismissals": 20.0,
+            "strike_rate": 177.9552715654952,
+            "average": 27.85,
             "boundary_pct": 30.434782608695656
         },
         "Q de Kock": {
@@ -4744,12 +4744,12 @@
             "boundary_pct": 18.97810218978102
         },
         "Rashid Khan": {
-            "runs": 585,
-            "boundaries": 82,
-            "balls_faced": 365,
-            "dismissals": 42.0,
-            "strike_rate": 160.27397260273972,
-            "average": 13.928571428571429,
+            "runs": 871,
+            "boundaries": 112,
+            "balls_faced": 547,
+            "dismissals": 44.0,
+            "strike_rate": 159.23217550274222,
+            "average": 19.795454545454547,
             "boundary_pct": 22.465753424657535
         },
         "Rasikh Salam": {
@@ -5554,12 +5554,12 @@
             "boundary_pct": 10.638297872340425
         },
         "Shubman Gill": {
-            "runs": 3866,
+            "runs": 3872,
             "boundaries": 491,
-            "balls_faced": 2787,
+            "balls_faced": 2803,
             "dismissals": 95.0,
-            "strike_rate": 138.71546465733763,
-            "average": 40.694736842105264,
+            "strike_rate": 138.1377095968605,
+            "average": 40.757894736842104,
             "boundary_pct": 17.61750986724076
         },
         "Sikandar Raza": {
@@ -6326,6 +6326,966 @@
             "strike_rate": 82.97872340425532,
             "average": 8.357142857142858,
             "boundary_pct": 9.219858156028367
+        },
+        "Akeal Hosein": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Aman Khan": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Ayush Mhatre": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Dewald Brewis": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Jamie Overton": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Matthew Short": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Prashant Veer": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Ruturaj Gaikwad": {
+            "runs": 55,
+            "boundaries": 5,
+            "balls_faced": 49,
+            "dismissals": 0,
+            "strike_rate": 112.24489795918366,
+            "average": 55,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Sanju Samson": {
+            "runs": 113,
+            "boundaries": 15,
+            "balls_faced": 71,
+            "dismissals": 0,
+            "strike_rate": 159.1549295774648,
+            "average": 113,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Sarfaraz Khan": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Shivam Dube": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "CSK"
+        },
+        "Ajay Mandal": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Axar Patel": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Ben Duckett": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "David Miller": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Karun Nair": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Madhav Tiwari": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Nitish Rana": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Pathum Nissanka": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Prithiv Shaw": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Tripurana Vijay": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Tristan Stubbs": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Vipraj Nigam": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "DC"
+        },
+        "Ashok Sharma": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Glenn Phillips": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Jason Holder": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Jos Buttler": {
+            "runs": 20,
+            "boundaries": 4,
+            "balls_faced": 20,
+            "dismissals": 4,
+            "strike_rate": 100.0,
+            "average": 5.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Prithvi Raj": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Rahul Tewatia": {
+            "runs": 40,
+            "boundaries": 8,
+            "balls_faced": 14,
+            "dismissals": 0,
+            "strike_rate": 285.7142857142857,
+            "average": 40,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Tom Banton": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "GT"
+        },
+        "Ajinkya Rahane": {
+            "runs": 106,
+            "boundaries": 13,
+            "balls_faced": 43,
+            "dismissals": 1,
+            "strike_rate": 246.51162790697674,
+            "average": 106.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Angkrish Raghuvanshi": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Anukul Roy": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Cameron Green": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Daksh Kamra": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Finn Allen": {
+            "runs": 88,
+            "boundaries": 13,
+            "balls_faced": 52,
+            "dismissals": 2,
+            "strike_rate": 169.23076923076923,
+            "average": 44.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Manish Pandey": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Rachin Ravindra": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Rahul Tripathi": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Rinku Singh": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Rovman Powell": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Sarthak Ranjan": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Sunil Narine": {
+            "runs": 41,
+            "boundaries": 5,
+            "balls_faced": 24,
+            "dismissals": 1,
+            "strike_rate": 170.83333333333331,
+            "average": 41.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Tejasvi Singh": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Tim Seifert": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "KKR"
+        },
+        "Aiden Markram": {
+            "runs": 38,
+            "boundaries": 5,
+            "balls_faced": 26,
+            "dismissals": 2,
+            "strike_rate": 146.15384615384613,
+            "average": 19.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Akshat Raghuwanshi": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Ayush Badoni": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Himmat Singh": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Josh Inglis": {
+            "runs": 184,
+            "boundaries": 28,
+            "balls_faced": 92,
+            "dismissals": 2,
+            "strike_rate": 200.0,
+            "average": 92.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Matthew Breetzke": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Mitchell Marsh": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Nicholas Pooran": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Rishabh Pant": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "LSG"
+        },
+        "Atharva Ankolekar": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Danish Malewar": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Hardik Pandya": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Mayank Rawat": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Mitchell Santner": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Quinton de Kock": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Raghu Sharma": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Robin Minz": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Rohit Sharma": {
+            "runs": 15,
+            "boundaries": 2,
+            "balls_faced": 14,
+            "dismissals": 2,
+            "strike_rate": 107.14285714285714,
+            "average": 7.5,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Ryan Rickelton": {
+            "runs": 14,
+            "boundaries": 2,
+            "balls_faced": 12,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 14,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Shardul Thakur": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Sherfane Rutherford": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Suryakumar Yadav": {
+            "runs": 193,
+            "boundaries": 26,
+            "balls_faced": 89,
+            "dismissals": 0,
+            "strike_rate": 216.85393258426967,
+            "average": 193,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Will Jacks": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "MI"
+        },
+        "Cooper Connolly": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Harnoor Singh Pannu": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Marco Jansen": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Marcus Stoinis": {
+            "runs": 82,
+            "boundaries": 12,
+            "balls_faced": 44,
+            "dismissals": 0,
+            "strike_rate": 186.36363636363635,
+            "average": 82,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Mitch Owen": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Nehal Wadhera": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Prabhsimran Singh": {
+            "runs": 12,
+            "boundaries": 2,
+            "balls_faced": 12,
+            "dismissals": 2,
+            "strike_rate": 100.0,
+            "average": 6.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Shreyas Iyer": {
+            "runs": 32,
+            "boundaries": 2,
+            "balls_faced": 34,
+            "dismissals": 2,
+            "strike_rate": 94.11764705882352,
+            "average": 16.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Vishal Nishad": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "PBKS"
+        },
+        "Devdutt Padikkal": {
+            "runs": 139,
+            "boundaries": 19,
+            "balls_faced": 68,
+            "dismissals": 0,
+            "strike_rate": 204.41176470588235,
+            "average": 139,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Jitesh Sharma": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Krunal Pandya": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Liam Livingstone": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Mangesh Yadav": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Phil Salt": {
+            "runs": 29,
+            "boundaries": 3,
+            "balls_faced": 15,
+            "dismissals": 0,
+            "strike_rate": 193.33333333333334,
+            "average": 29,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Rajat Patidar": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Romario Shepherd": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Tim David": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Venkatesh Iyer": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Virat Kohli": {
+            "runs": 15,
+            "boundaries": 0,
+            "balls_faced": 12,
+            "dismissals": 2,
+            "strike_rate": 125.0,
+            "average": 7.5,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RCB"
+        },
+        "Devon Conway": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Kunal Rathore": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Riyan Parag": {
+            "runs": 0,
+            "boundaries": 0,
+            "balls_faced": 0,
+            "dismissals": 0,
+            "strike_rate": 116.66666666666667,
+            "average": 15.8375,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Shimron Hetmyer": {
+            "runs": 32,
+            "boundaries": 4,
+            "balls_faced": 15,
+            "dismissals": 0,
+            "strike_rate": 213.33333333333334,
+            "average": 32,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Vaibhav Suryavanshi": {
+            "runs": 30,
+            "boundaries": 4,
+            "balls_faced": 18,
+            "dismissals": 1,
+            "strike_rate": 166.66666666666669,
+            "average": 30.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Yashasvi Jaiswal": {
+            "runs": 90,
+            "boundaries": 12,
+            "balls_faced": 55,
+            "dismissals": 0,
+            "strike_rate": 163.63636363636365,
+            "average": 90,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "RR"
+        },
+        "Heinrich Klaasen": {
+            "runs": 77,
+            "boundaries": 14,
+            "balls_faced": 27,
+            "dismissals": 1,
+            "strike_rate": 285.18518518518516,
+            "average": 77.0,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "SRH"
+        },
+        "Travis Head": {
+            "runs": 30,
+            "boundaries": 3,
+            "balls_faced": 26,
+            "dismissals": 0,
+            "strike_rate": 115.38461538461537,
+            "average": 30,
+            "boundary_pct": 14.232209737827715,
+            "team_2026": "SRH"
         }
     },
     "bowlers": {
@@ -6738,12 +7698,12 @@
             "average": 0.0
         },
         "Abhishek Sharma": {
-            "runs_conceded": 501,
-            "balls_bowled": 336,
+            "runs_conceded": 523,
+            "balls_bowled": 348,
             "wickets": 11.0,
-            "economy": 8.946428571428571,
-            "strike_rate": 30.545454545454547,
-            "average": 45.54545454545455
+            "economy": 9.017241379310345,
+            "strike_rate": 31.636363636363637,
+            "average": 47.54545454545455
         },
         "Akash Deep": {
             "runs_conceded": 548,
@@ -6818,12 +7778,12 @@
             "average": 38.0
         },
         "Arshad Khan": {
-            "runs_conceded": 497,
-            "balls_bowled": 260,
+            "runs_conceded": 531,
+            "balls_bowled": 284,
             "wickets": 12.0,
-            "economy": 11.46923076923077,
-            "strike_rate": 21.666666666666668,
-            "average": 41.416666666666664
+            "economy": 11.218309859154928,
+            "strike_rate": 23.666666666666668,
+            "average": 44.25
         },
         "Arshad Khan (2)": {
             "runs_conceded": 24,
@@ -6834,12 +7794,12 @@
             "average": 0.0
         },
         "Arshdeep Singh": {
-            "runs_conceded": 2570,
-            "balls_bowled": 1714,
+            "runs_conceded": 2616,
+            "balls_bowled": 1738,
             "wickets": 97.0,
-            "economy": 8.996499416569428,
-            "strike_rate": 17.670103092783506,
-            "average": 26.49484536082474
+            "economy": 9.031070195627157,
+            "strike_rate": 17.917525773195877,
+            "average": 26.969072164948454
         },
         "Ashwani Kumar": {
             "runs_conceded": 232,
@@ -7506,12 +8466,12 @@
             "average": 0.0
         },
         "Fazalhaq Farooqi": {
-            "runs_conceded": 437,
-            "balls_bowled": 254,
+            "runs_conceded": 474,
+            "balls_bowled": 271,
             "wickets": 6.0,
-            "economy": 10.32283464566929,
-            "strike_rate": 42.333333333333336,
-            "average": 72.83333333333333
+            "economy": 10.494464944649447,
+            "strike_rate": 45.166666666666664,
+            "average": 79.0
         },
         "G Coetzee": {
             "runs_conceded": 472,
@@ -7682,12 +8642,12 @@
             "average": 27.074074074074073
         },
         "Harpreet Brar": {
-            "runs_conceded": 1085,
-            "balls_bowled": 811,
-            "wickets": 35.0,
-            "economy": 8.027127003699137,
-            "strike_rate": 23.17142857142857,
-            "average": 31.0
+            "runs_conceded": 1155,
+            "balls_bowled": 847,
+            "wickets": 37.0,
+            "economy": 8.181818181818182,
+            "strike_rate": 22.89189189189189,
+            "average": 31.216216216216218
         },
         "Harsh Dubey": {
             "runs_conceded": 98,
@@ -7698,12 +8658,12 @@
             "average": 19.6
         },
         "Harshit Rana": {
-            "runs_conceded": 1029,
-            "balls_bowled": 649,
+            "runs_conceded": 1061,
+            "balls_bowled": 667,
             "wickets": 40.0,
-            "economy": 9.513097072419106,
-            "strike_rate": 16.225,
-            "average": 25.725
+            "economy": 9.544227886056971,
+            "strike_rate": 16.675,
+            "average": 26.525
         },
         "I Malhotra": {
             "runs_conceded": 23,
@@ -8834,12 +9794,12 @@
             "average": 28.24812030075188
         },
         "Mohammed Siraj": {
-            "runs_conceded": 3349,
-            "balls_bowled": 2300,
-            "wickets": 109.0,
-            "economy": 8.736521739130435,
-            "strike_rate": 21.10091743119266,
-            "average": 30.724770642201836
+            "runs_conceded": 3413,
+            "balls_bowled": 2324,
+            "wickets": 111.0,
+            "economy": 8.811531841652323,
+            "strike_rate": 20.936936936936938,
+            "average": 30.74774774774775
         },
         "Mohit Rathee": {
             "runs_conceded": 29,
@@ -8874,12 +9834,12 @@
             "average": 31.0
         },
         "Mukesh Choudhary": {
-            "runs_conceded": 522,
-            "balls_bowled": 315,
+            "runs_conceded": 538,
+            "balls_bowled": 327,
             "wickets": 17.0,
-            "economy": 9.942857142857143,
-            "strike_rate": 18.529411764705884,
-            "average": 30.705882352941178
+            "economy": 9.871559633027523,
+            "strike_rate": 19.235294117647058,
+            "average": 31.647058823529413
         },
         "Mukesh Kumar": {
             "runs_conceded": 1102,
@@ -8898,12 +9858,12 @@
             "average": 27.0
         },
         "Mustafizur Rahman": {
-            "runs_conceded": 1849,
-            "balls_bowled": 1364,
-            "wickets": 65.0,
-            "economy": 8.133431085043988,
-            "strike_rate": 20.984615384615385,
-            "average": 28.446153846153845
+            "runs_conceded": 1871,
+            "balls_bowled": 1377,
+            "wickets": 66.0,
+            "economy": 8.152505446623094,
+            "strike_rate": 20.863636363636363,
+            "average": 28.348484848484848
         },
         "N Burger": {
             "runs_conceded": 145,
@@ -9034,12 +9994,12 @@
             "average": 50.8
         },
         "Noor Ahmad": {
-            "runs_conceded": 1067,
-            "balls_bowled": 792,
+            "runs_conceded": 1092,
+            "balls_bowled": 804,
             "wickets": 48.0,
-            "economy": 8.083333333333334,
-            "strike_rate": 16.5,
-            "average": 22.229166666666668
+            "economy": 8.149253731343284,
+            "strike_rate": 16.75,
+            "average": 22.75
         },
         "O Thomas": {
             "runs_conceded": 79,
@@ -9626,20 +10586,20 @@
             "average": 10.5
         },
         "Rashid Khan": {
-            "runs_conceded": 3781,
-            "balls_bowled": 3202,
+            "runs_conceded": 3805,
+            "balls_bowled": 3230,
             "wickets": 158.0,
-            "economy": 7.084946908182387,
-            "strike_rate": 20.265822784810126,
-            "average": 23.930379746835442
+            "economy": 7.068111455108359,
+            "strike_rate": 20.443037974683545,
+            "average": 24.082278481012658
         },
         "Rasikh Salam": {
-            "runs_conceded": 409,
-            "balls_bowled": 231,
+            "runs_conceded": 450,
+            "balls_bowled": 249,
             "wickets": 10.0,
-            "economy": 10.623376623376624,
-            "strike_rate": 23.1,
-            "average": 40.9
+            "economy": 10.843373493975903,
+            "strike_rate": 24.9,
+            "average": 45.0
         },
         "Ravi Bishnoi": {
             "runs_conceded": 2237,
@@ -10258,12 +11218,12 @@
             "average": 0.0
         },
         "Suyash Sharma": {
-            "runs_conceded": 814,
-            "balls_bowled": 558,
+            "runs_conceded": 847,
+            "balls_bowled": 576,
             "wickets": 18.0,
-            "economy": 8.75268817204301,
-            "strike_rate": 31.0,
-            "average": 45.22222222222222
+            "economy": 8.822916666666666,
+            "strike_rate": 32.0,
+            "average": 47.05555555555556
         },
         "Swapnil Singh": {
             "runs_conceded": 241,
@@ -10282,12 +11242,12 @@
             "average": 40.0
         },
         "T Natarajan": {
-            "runs_conceded": 2022,
-            "balls_bowled": 1362,
+            "runs_conceded": 2039,
+            "balls_bowled": 1374,
             "wickets": 68.0,
-            "economy": 8.907488986784141,
-            "strike_rate": 20.029411764705884,
-            "average": 29.735294117647058
+            "economy": 8.903930131004367,
+            "strike_rate": 20.205882352941178,
+            "average": 29.985294117647058
         },
         "T Shamsi": {
             "runs_conceded": 181,
@@ -10418,12 +11378,12 @@
             "average": 15.333333333333334
         },
         "Umran Malik": {
-            "runs_conceded": 772,
-            "balls_bowled": 493,
+            "runs_conceded": 828,
+            "balls_bowled": 517,
             "wickets": 29.0,
-            "economy": 9.39553752535497,
-            "strike_rate": 17.0,
-            "average": 26.620689655172413
+            "economy": 9.609284332688587,
+            "strike_rate": 17.82758620689655,
+            "average": 28.551724137931036
         },
         "V Kaverappa": {
             "runs_conceded": 36,
@@ -10602,12 +11562,12 @@
             "average": 19.72222222222222
         },
         "Washington Sundar": {
-            "runs_conceded": 1436,
-            "balls_bowled": 1119,
-            "wickets": 39.0,
-            "economy": 7.6997319034852545,
-            "strike_rate": 28.692307692307693,
-            "average": 36.82051282051282
+            "runs_conceded": 1488,
+            "balls_bowled": 1143,
+            "wickets": 41.0,
+            "economy": 7.811023622047244,
+            "strike_rate": 27.878048780487806,
+            "average": 36.292682926829265
         },
         "XC Bartlett": {
             "runs_conceded": 96,
@@ -10682,12 +11642,12 @@
             "average": 22.76923076923077
         },
         "Yash Dayal": {
-            "runs_conceded": 1390,
-            "balls_bowled": 871,
-            "wickets": 41.0,
-            "economy": 9.575200918484501,
-            "strike_rate": 21.24390243902439,
-            "average": 33.90243902439025
+            "runs_conceded": 1421,
+            "balls_bowled": 889,
+            "wickets": 42.0,
+            "economy": 9.590551181102363,
+            "strike_rate": 21.166666666666668,
+            "average": 33.833333333333336
         },
         "Yash Thakur": {
             "runs_conceded": 770,
@@ -10728,6 +11688,726 @@
             "economy": 9.842364532019705,
             "strike_rate": 33.833333333333336,
             "average": 55.5
+        },
+        "Akeal Hosein": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Aman Khan": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Anshul Kamboj": {
+            "runs_conceded": 21,
+            "balls_bowled": 12,
+            "wickets": 0,
+            "economy": 10.5,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Gurjapneet Singh": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Jamie Overton": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Kartik Sharma": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Khaleel Ahmed": {
+            "runs_conceded": 9,
+            "balls_bowled": 6,
+            "wickets": 0,
+            "economy": 9.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Matt Henry": {
+            "runs_conceded": 12,
+            "balls_bowled": 7,
+            "wickets": 1,
+            "economy": 10.285714285714285,
+            "strike_rate": 7.0,
+            "average": 12.0,
+            "team_2026": "CSK"
+        },
+        "Nathan Ellis": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Rahul Chahar": {
+            "runs_conceded": 15,
+            "balls_bowled": 12,
+            "wickets": 0,
+            "economy": 7.5,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Ramakrishna Ghosh": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Shreyas Gopal": {
+            "runs_conceded": 22,
+            "balls_bowled": 12,
+            "wickets": 0,
+            "economy": 11.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Zak Foulkes": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "CSK"
+        },
+        "Auqib Nabi Dar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Axar Patel": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Dushmantha Chameera": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Kyle Jamieson": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Lungi Ngidi": {
+            "runs_conceded": 26,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 8.666666666666666,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Mitchell Starc": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Sahil Parikh": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "DC"
+        },
+        "Ishant Sharma": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Jason Holder": {
+            "runs_conceded": 32,
+            "balls_bowled": 24,
+            "wickets": 0,
+            "economy": 8.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Jayant Yadav": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Kagiso Rabada": {
+            "runs_conceded": 60,
+            "balls_bowled": 36,
+            "wickets": 0,
+            "economy": 10.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Luke Wood": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Manav Suthar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Nishant Sindhu": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Prasidh Krishna": {
+            "runs_conceded": 56,
+            "balls_bowled": 36,
+            "wickets": 4,
+            "economy": 9.333333333333334,
+            "strike_rate": 9.0,
+            "average": 14.0,
+            "team_2026": "GT"
+        },
+        "Rahul Tewatia": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "GT"
+        },
+        "Anukul Roy": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Cameron Green": {
+            "runs_conceded": 17,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 5.666666666666667,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Matheesha Pathirana": {
+            "runs_conceded": 33,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 11.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Prashant Solanki": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Rovman Powell": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Sunil Narine": {
+            "runs_conceded": 42,
+            "balls_bowled": 18,
+            "wickets": 1,
+            "economy": 14.0,
+            "strike_rate": 18.0,
+            "average": 42.0,
+            "team_2026": "KKR"
+        },
+        "Vaibhav Arora": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Varun Chakravarthy": {
+            "runs_conceded": 42,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 14.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "KKR"
+        },
+        "Anrich Nortje": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Arshin Kulkarni": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Digvesh Rathi": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Manimaran Siddharth": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Mayank Yadav": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Mitchell Marsh": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Mukul Choudhary": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Naman Tiwari": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "Wanindu Hasaranga": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "LSG"
+        },
+        "AM Ghazanfar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Atharva Ankolekar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Corbin Bosch": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Deepak Chahar": {
+            "runs_conceded": 32,
+            "balls_bowled": 18,
+            "wickets": 1,
+            "economy": 10.666666666666666,
+            "strike_rate": 18.0,
+            "average": 32.0,
+            "team_2026": "MI"
+        },
+        "Hardik Pandya": {
+            "runs_conceded": 38,
+            "balls_bowled": 17,
+            "wickets": 1,
+            "economy": 13.411764705882351,
+            "strike_rate": 17.0,
+            "average": 38.0,
+            "team_2026": "MI"
+        },
+        "Jasprit Bumrah": {
+            "runs_conceded": 12,
+            "balls_bowled": 12,
+            "wickets": 1,
+            "economy": 6.0,
+            "strike_rate": 12.0,
+            "average": 12.0,
+            "team_2026": "MI"
+        },
+        "Mayank Markande": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Mitchell Santner": {
+            "runs_conceded": 41,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 13.666666666666666,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Mohammad Izhar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Raj Bawa": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Shardul Thakur": {
+            "runs_conceded": 36,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 12.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "MI"
+        },
+        "Trent Boult": {
+            "runs_conceded": 59,
+            "balls_bowled": 36,
+            "wickets": 1,
+            "economy": 9.833333333333334,
+            "strike_rate": 36.0,
+            "average": 59.0,
+            "team_2026": "MI"
+        },
+        "Ben Dwarshuis": {
+            "runs_conceded": 36,
+            "balls_bowled": 36,
+            "wickets": 0,
+            "economy": 6.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Cooper Connolly": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Lockie Ferguson": {
+            "runs_conceded": 54,
+            "balls_bowled": 36,
+            "wickets": 2,
+            "economy": 9.0,
+            "strike_rate": 18.0,
+            "average": 27.0,
+            "team_2026": "PBKS"
+        },
+        "Marco Jansen": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Marcus Stoinis": {
+            "runs_conceded": 72,
+            "balls_bowled": 36,
+            "wickets": 2,
+            "economy": 12.0,
+            "strike_rate": 18.0,
+            "average": 36.0,
+            "team_2026": "PBKS"
+        },
+        "Pravin Dubey": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Pyla Avinash": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Vyshak Vijaykumar": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Xavier Bartlett": {
+            "runs_conceded": 46,
+            "balls_bowled": 36,
+            "wickets": 0,
+            "economy": 7.666666666666667,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Yuzvendra Chahal": {
+            "runs_conceded": 40,
+            "balls_bowled": 36,
+            "wickets": 0,
+            "economy": 6.666666666666667,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "PBKS"
+        },
+        "Bhuvneshwar Kumar": {
+            "runs_conceded": 56,
+            "balls_bowled": 30,
+            "wickets": 0,
+            "economy": 11.2,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Duffy": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Josh Hazlewood": {
+            "runs_conceded": 25,
+            "balls_bowled": 18,
+            "wickets": 1,
+            "economy": 8.333333333333334,
+            "strike_rate": 18.0,
+            "average": 25.0,
+            "team_2026": "RCB"
+        },
+        "Krunal Pandya": {
+            "runs_conceded": 35,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 11.666666666666666,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Mangesh Yadav": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Reece Topley": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Romario Shepherd": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Tim David": {
+            "runs_conceded": 0,
+            "balls_bowled": 0,
+            "wickets": 0,
+            "economy": 8.717784060312333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Venkatesh Iyer": {
+            "runs_conceded": 22,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 7.333333333333333,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RCB"
+        },
+        "Jofra Archer": {
+            "runs_conceded": 15,
+            "balls_bowled": 12,
+            "wickets": 0,
+            "economy": 7.5,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RR"
+        },
+        "Ravichandran Ashwin": {
+            "runs_conceded": 25,
+            "balls_bowled": 18,
+            "wickets": 0,
+            "economy": 8.333333333333334,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "RR"
+        },
+        "Pat Cummins": {
+            "runs_conceded": 26,
+            "balls_bowled": 12,
+            "wickets": 0,
+            "economy": 13.0,
+            "strike_rate": 21.708333333333336,
+            "average": 31.0,
+            "team_2026": "SRH"
         }
     },
     "global_baselines": {

@@ -837,39 +837,91 @@ class HybridEnsemble:
         interval_min = max(0.01, final_mean - (1.96 * total_std))
         interval_max = min(0.99, final_mean + (1.96 * total_std))
         
-        result = {
-            'win_probability': float(final_mean),
-            'interval_min': float(interval_min),
-            'interval_max': float(interval_max),
-            'static_probability': float(static_prob),
-            'lstm_probability': float(lstm_mean),
-        }
-        
-        if return_confidence:
-            # Entropy calculation for final certainty (closer to 1.0 or 0.0 = low entropy = high confidence)
-            # P and 1-P
-            e = entropy([final_mean, 1 - final_mean], base=2)
-            # Normalize confidence. 0 entropy = 100% confidence. 1 entropy (0.5/0.5) = 0% confidence
-            confidence_pct = max(0.0, min(100.0, (1 - e) * 100))
-            
-            # Model agreement (low std dev = high agreement)
-            agreement_pct = max(0.0, min(100.0, (1 - (total_std * 2)) * 100))
-            
-            result['confidence'] = float(confidence_pct / 100.0) # For legacy logic compatibility
-            result['confidence_pct'] = float(confidence_pct)
-            result['agreement_pct'] = float(agreement_pct)
-            result['entropy'] = float(e)
-            
-            if e > 0.85:
-                result['status'] = "LOW_CONFIDENCE"
-            else:
-                result['status'] = "CONFIDENT"
-                
-        # Simulated SHAP explanation (Zero-dependency heuristic for speed)
-        # Using the raw_context if passed, otherwise empty
-        result['impact_factors'] = self._explain_prediction(static_prob, raw_context or {})
-        
         return result
+
+    def predict_pre_match(self, batting_team: str, bowling_team: str, venue: str) -> Dict:
+        """
+        High-level pre-match prediction using only static features.
+        Used when matches haven't started yet.
+        """
+        normalizer = CricsheetNormalizer()
+        n_bat = normalizer.normalize_team(batting_team)
+        n_bowl = normalizer.normalize_team(bowling_team)
+        n_venue = normalizer.normalize_venue(venue)
+
+        # Baseline ELO from recent (or default if missing)
+        bat_elo = 1500.0
+        bowl_elo = 1500.0
+        
+        # Try to find recent ELO in lookup
+        for d in sorted(normalizer.elo_lookup.keys(), reverse=True):
+            if n_bat in normalizer.elo_lookup[d]:
+                bat_elo = normalizer.elo_lookup[d][n_bat]
+            if n_bowl in normalizer.elo_lookup[d]:
+                bowl_elo = normalizer.elo_lookup[d][n_bowl]
+            if bat_elo != 1500.0 and bowl_elo != 1500.0:
+                break
+
+        # Calculate pre-match features (mock context)
+        # Using 0 runs/0 wickets at over 0, 120 balls remaining
+        static_features = {
+            'inning': 1, 'over': 0.0, 'total_runs': 0, 'total_wickets': 0,
+            'crr': 0.0, 'runs_last_6': 0, 'wickets_last_6': 0,
+            'boundary_rate': 0.1, 'dot_pressure': 0.4,
+            'balls_remaining': 120,
+            'bat_sr': 130.0, 'bat_avg': 25.0, 'bat_bp': 12.0,
+            'bowl_econ': 8.5, 'bowl_sr': 20.0, 'bowl_avg': 28.0,
+            'temp': 28.0, 'humidity': 55.0, 'dew': 18.0,
+            'bat_elo': bat_elo, 'bowl_elo': bowl_elo,
+            'elo_diff': bat_elo - bowl_elo
+        }
+
+        # Transform features
+        X_static = pd.DataFrame([static_features])
+        
+        # Explicitly order to match training schema (22 features)
+        col_order = [
+            'inning', 'over', 'total_runs', 'total_wickets', 'crr', 
+            'runs_last_6', 'wickets_last_6', 'boundary_rate', 'dot_pressure',
+            'balls_remaining', 'bat_sr', 'bat_avg', 'bat_bp', 'bowl_econ',
+            'bowl_sr', 'bowl_avg', 'temp', 'humidity', 'dew', 'bat_elo',
+            'bowl_elo', 'elo_diff'
+        ]
+        X_static = X_static[col_order]
+        try:
+            if hasattr(self, 'static_scaler') and self.static_scaler:
+                # Check for fitted status (XGBoost/Sklearn pattern)
+                X_static_scaled = self.static_scaler.transform(X_static)
+            else:
+                X_static_scaled = X_static
+        except Exception as e:
+            logger.warning(f"⚠️ Scaler transform failed (likely NotFitted): {e}. Using raw features.")
+            X_static_scaled = X_static
+
+        # Predict using static model (probabilities for classes [0, 1])
+        if self.static_model:
+            try:
+                # Some models take DataFrame, some take NumPy
+                probs = self.static_model.predict_proba(X_static_scaled)[0]
+                # Class 1 is Win probability for Batting Team
+                win_prob = float(probs[1]) if len(probs) > 1 else 0.5
+            except Exception as e:
+                logger.error(f"Static pre-match prediction failed: {e}")
+                # Simple fallback: Higher ELO = Higher Win %
+                win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+                win_prob = max(0.05, min(0.95, win_prob))
+        else:
+            win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+            win_prob = max(0.05, min(0.95, win_prob))
+
+        return {
+            'win_probability': win_prob,
+            'batting_team': batting_team,
+            'bowling_team': bowling_team,
+            'venue': venue,
+            'confidence': 0.6,
+            'status': "PRE_MATCH_PREDICTION"
+        }
         
         t1_elo = context.get('bat_elo', 1500)
         t2_elo = context.get('bowl_elo', 1500)
@@ -1037,33 +1089,59 @@ class RealTimePredictor:
     def predict_live_match(self, match_id: str) -> Dict:
         """
         Generate prediction for a live match.
-        
-        Args:
-            match_id: Unique match identifier
-        
-        Returns:
-            Prediction result with win probability
+        Fallback to pre-match prediction if no live data is found in Redis.
         """
-        start_time = time.time()
-        
-        # Fetch full match data thus far for accurate static feature aggregation
-        ball_stream = f"ipl:balls:{match_id}"
-        all_balls = self.redis_client.xrevrange(ball_stream)
-        
-        if not all_balls:
-            return {'error': 'No live data available'}
-        
-        # Convert to DataFrame
-        ball_data = [b[1] for b in reversed(all_balls)]
-        df = pd.DataFrame(ball_data)
-        
-        # Ensure datatypes (Redis stores as strings)
-        for col in ['inning', 'over', 'runs', 'wicket']:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+        r = self.redis_client
+        try:
+            # Check for live data
+            last_ball = r.xrevrange(f"ipl:balls:{match_id}", count=1)
+            
+            if not last_ball:
+                # Fallback: Check if it's an upcoming match from the schedule
+                logger.info(f"ℹ️ No live data for {match_id}. Checking schedule for pre-match prediction...")
                 
-        # Inject match_id for the normalizer
-        df['match_id'] = match_id
+                from backend.data_pipeline.match_discovery import MatchDiscoveryService
+                discovery = MatchDiscoveryService()
+                upcoming = discovery._get_local_schedule()
+                
+                match_info = next((m for m in upcoming if m['match_id'] == match_id), None)
+                if match_info:
+                    teams = match_info['teams'].split(' vs ')
+                    if len(teams) == 2:
+                        return self.model.predict_pre_match(teams[0], teams[1], "Standard IPL Venue")
+                
+                return {"error": "Match not active and no schedule info found."}
+
+            # ── Existing Live Prediction Logic ──────────────────────────────
+            ball_data = last_ball[0][1]
+            
+            # Map Redis fields to normalized state
+            current_state = {
+                'match_id': match_id,
+                'batting_team': ball_data.get('batting_team'),
+                'bowling_team': ball_data.get('bowling_team'),
+                'over': float(ball_data.get('over', 0)),
+                'total_runs': int(ball_data.get('total_runs', 0)),
+                'total_wickets': int(ball_data.get('total_wickets', 0)),
+                'inning': int(ball_data.get('inning', 1))
+            }
+            
+            # Generate hybrid prediction
+            prediction = self.model.predict(current_state, return_confidence=True)
+            
+            # Add metadata
+            prediction['match_id'] = match_id
+            prediction['timestamp'] = time.time()
+            prediction['last_over'] = current_state['over']
+            
+            # Performance tracking
+            self.inference_times.append(time.time() - prediction.get('timestamp', time.time()))
+            
+            return prediction
+            
+        except Exception as e:
+            logger.error(f"Prediction logic crash for {match_id}: {e}")
+            return {"error": str(e)}
         
         # Ensure required columns for normalizer exist
         required_cols = ['batsman', 'bowler', 'batting_team', 'bowling_team']

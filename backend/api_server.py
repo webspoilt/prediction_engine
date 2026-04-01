@@ -223,10 +223,10 @@ async def run_discovery_loop(app: FastAPI):
     await asyncio.sleep(5)  # Let startup finish
     while True:
         try:
-            from backend.data_pipeline.match_discovery import MatchDiscoveryService
-            discovery = MatchDiscoveryService()
-            matches = discovery._find_live_ipl_matches()
-            logger.info(f"🔎 Discovery scan: {len(matches)} live IPL matches found")
+            from backend.data_pipeline.cricbuzz_api import CricbuzzAPI
+            matches = await CricbuzzAPI.get_live_matches()
+            if matches:
+                logger.info(f"🔎 Discovery scan: {len(matches)} live IPL matches found")
 
             for m in matches:
                 m_id = m['match_id']
@@ -344,8 +344,18 @@ async def get_upcoming_matches(season: str):
                                 "matchdate": row['Date'],
                                 "teama": teama,
                                 "teamb": teamb,
-                                "venue": row['Venue']
+                                "venue": row['Venue'],
+                                "win_probability": 0.5 # Default
                             })
+
+                            if predictor:
+                                try:
+                                    # Fix: Use normalized names for prediction if needed, 
+                                    # but predict_pre_match handles normalization.
+                                    pred = predictor.model.predict_pre_match(teama, teamb, row['Venue'])
+                                    upcoming[-1]['win_probability'] = float(pred.get('win_probability', 0.5))
+                                except Exception as e:
+                                    logger.warning(f"Failed pre-match prediction for {teama} vs {teamb}: {e}")
                     except Exception:
                         continue
                         

@@ -22,10 +22,14 @@ class MatchDiscoveryService:
         self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
         self.active_scrapers = {} # match_id -> Task
         self.default_poll = 300  # Fallback 5 mins if no schedule found
+        self.sync_interval = 60  # API Fallback sync every 60s
 
     async def run(self):
         """Main loop: Find live matches or sleep until the next scheduled match."""
         logger.info("🚀 Starting Pro V3 Intelligent Match Discovery Service...")
+        
+        # Start the API Fallback Sync Worker
+        asyncio.create_task(self._api_sync_worker())
         
         while True:
             try:
@@ -75,6 +79,42 @@ class MatchDiscoveryService:
             except Exception as e:
                 logger.error(f"Error in discovery loop: {e}")
                 await asyncio.sleep(self.default_poll)
+
+    async def _api_sync_worker(self):
+        """
+        Background task that ensures Redis has live scores via API if scrapers fail.
+        This provides the 'Free API Fallback' the user requested.
+        """
+        logger.info("🔄 API Fallback Sync Worker started.")
+        while True:
+            try:
+                active_match_ids = self.redis_client.smembers("active:matches:set")
+                for m_id in active_match_ids:
+                    # Check if scraper is effectively working (has detailed balls in stream)
+                    ball_stream = f"ipl:balls:{m_id}"
+                    last_ball = self.redis_client.xrevrange(ball_stream, count=1)
+                    
+                    # If no balls in last 30s or no balls at all, fetch via API
+                    needs_sync = False
+                    if not last_ball:
+                        needs_sync = True
+                    else:
+                        ts = int(last_ball[0][0].split('-')[0]) / 1000.0
+                        if time.time() - ts > 60: # No update for 60s
+                            needs_sync = True
+                    
+                    if needs_sync:
+                        logger.info(f"📡 Scraper stale for {m_id}. Fetching API Fallback score...")
+                        score = await CricbuzzAPI.get_match_score(m_id)
+                        if score:
+                            # Push basic state to the ball stream
+                            self.redis_client.xadd(ball_stream, score)
+                            logger.info(f"✅ Synced API score for {m_id}: {score['total_runs']}/{score['total_wickets']}")
+                
+                await asyncio.sleep(self.sync_interval)
+            except Exception as e:
+                logger.error(f"API Sync Worker error: {e}")
+                await asyncio.sleep(self.sync_interval)
 
     def _register_match(self, match: Dict):
         """Store match in Redis and notify the system"""

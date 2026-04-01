@@ -59,6 +59,47 @@ class CricbuzzAPI:
                 return []
 
     @classmethod
+    async def get_match_score(cls, match_id: str) -> Optional[Dict]:
+        """Fetch latest score for a specific match via JSON API."""
+        url = f"{cls.BASE_URL}/livematches.json"
+        
+        async with aiohttp.ClientSession(headers=cls.HEADERS) as session:
+            try:
+                async with session.get(url, timeout=10) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        match_data = data.get('matches', {}).get(str(match_id))
+                        if not match_data:
+                            return None
+                            
+                        header = match_data.get('header', {})
+                        team1 = match_data.get('team1', {}).get('name', 'Team A')
+                        team2 = match_data.get('team2', {}).get('name', 'Team B')
+                        
+                        # Cricbuzz score structure is often nested in 'innings' or 'score'
+                        # For brevity, we'll try to extract common fields
+                        score_data = match_data.get('score', {})
+                        runs = score_data.get('runs', 0)
+                        wickets = score_data.get('wickets', 0)
+                        overs = score_data.get('overs', 0.0)
+                        
+                        # Determine batting team
+                        batting_team = team1 if score_data.get('batting_team_id') == match_data.get('team1', {}).get('id') else team2
+
+                        return {
+                            'match_id': match_id,
+                            'batting_team': batting_team,
+                            'bowling_team': team2 if batting_team == team1 else team1,
+                            'total_runs': int(runs) if runs else 0,
+                            'total_wickets': int(wickets) if wickets else 0,
+                            'over': float(overs) if overs else 0.0,
+                            'inning': int(score_data.get('inning', 1)) 
+                        }
+            except Exception as e:
+                logger.error(f"Error fetching match score for {match_id}: {e}")
+        return None
+
+    @classmethod
     async def get_match_schedule(cls) -> List[Dict]:
         """Fetch the upcoming match schedule to determine when to wake up the engine."""
         # For simplicity, we can fetch the series schedule (if known series ID)

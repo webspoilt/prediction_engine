@@ -26,8 +26,8 @@ class ESPNCricinfoScraper:
         self.is_running = True
         logger.info(f"🚀 Started ESPN Scraper for {match_id} at {url}")
         
-        # We'll use Scrapling Fetcher which handles cookies/UA/JS-heavy pages well
-        fetcher = Fetcher(auto_match=True)
+        # Use curl_cffi to avoid playwright dependency in production
+        fetcher = Fetcher(adapter='curl_cffi', auto_match=True)
         
         while self.is_running:
             try:

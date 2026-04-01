@@ -89,8 +89,8 @@ class MatchDiscoveryService:
         """Scrape Cricbuzz to find live IPL matches"""
         found_matches = []
         try:
-            # Using Scrapling Fetcher (impersonates browser internally)
-            fetcher = Fetcher(auto_match=True)
+            # Using Scrapling Fetcher with curl_cffi adapter (no Playwright needed)
+            fetcher = Fetcher(adapter='curl_cffi', auto_match=True)
             page = fetcher.get(LIVE_SCORES_URL)
             
             # Find the IPL section

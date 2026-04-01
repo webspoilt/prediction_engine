@@ -4,13 +4,12 @@ import os
 import pandas as pd
 from datetime import datetime
 
-# Import existing fetchers and builders
-from backend.data_pipeline.cricsheet_fetcher import fetch_recent_matches
-from backend.ml_engine.build_player_db import update_with_new_players
-from backend.ml_engine.train_efficient import train_efficiently
-
+# Initialize logger at the absolute top to prevent NameErrors in early imports
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Import existing fetchers and builders
+from backend.data_pipeline.cricsheet_fetcher import fetch_recent_matches
 
 PROCESSED_DIR = "data/processed"
 MATCHES_CSV = os.path.join(PROCESSED_DIR, "ipl_matches.csv")
@@ -21,7 +20,10 @@ def ensure_base_csvs_exist():
     os.makedirs(PROCESSED_DIR, exist_ok=True)
     
     if not os.path.exists(MATCHES_CSV):
-        logger.info("Initializing base ipl_matches.csv to prevent startup warnings.")
+        try:
+            logger.info("Initializing base ipl_matches.csv to prevent startup warnings.")
+        except NameError:
+            print("INFO: Initializing base ipl_matches.csv (logger fallback)")
         df = pd.DataFrame(columns=['id', 'season', 'city', 'date', 'team1', 'team2', 'toss_winner', 'toss_decision', 'result', 'winner'])
         df.to_csv(MATCHES_CSV, index=False)
         

@@ -23,8 +23,38 @@ class CricbuzzAPI:
     }
 
     @classmethod
+    async def get_live_matches_espn(cls) -> List[Dict]:
+        """Discovery using ESPN-Cricinfo Consumer API (bypass 403 blocks)."""
+        url = "https://hs-consumer-api.espncricinfo.com/v1/pages/matches/current?lang=en&clubId=null"
+        try:
+            async with aiohttp.ClientSession(headers=cls.HEADERS) as session:
+                async with session.get(url, timeout=10) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        matches = []
+                        for m_info in data.get('matches', []):
+                            # Filter for IPL matches
+                            series = m_info.get('series', {})
+                            if "Indian Premier League" in series.get('name', '') or "IPL" in series.get('name', ''):
+                                if m_info.get('status') == 'Live':
+                                    matches.append({
+                                        'match_id': str(m_info.get('id')),
+                                        'teams': f"{m_info.get('teams', [{}, {}])[0].get('team', {}).get('name', 'T1')} vs {m_info.get('teams', [{}, {}])[1].get('team', {}).get('name', 'T2')}",
+                                        'url': f"https://www.espncricinfo.com/series/ipl-2026-1410320/match-slug-{m_info.get('id')}/live-score"
+                                    })
+                        return matches
+        except Exception as e:
+            # logger isn't strictly defined in this class scope, so we use print/log fallback
+            print(f"DEBUG: ESPN Consumer API failed: {e}")
+        return []
+
+    @classmethod
     async def get_live_matches(cls) -> List[Dict]:
-        """Fetch all currently live cricket matches natively via JSON."""
+        """Primary discovery method: Try ESPN then fallback to Cricbuzz."""
+        espn_matches = await cls.get_live_matches_espn()
+        if espn_matches:
+            return espn_matches
+            
         url = f"{cls.BASE_URL}/livematches.json"
         
         async with aiohttp.ClientSession(headers=cls.HEADERS) as session:

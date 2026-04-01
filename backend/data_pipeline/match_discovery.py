@@ -33,6 +33,17 @@ class MatchDiscoveryService:
         
         while True:
             try:
+                # 0. HARD FALLBACK: Register next 5 matches from static schedule in Redis
+                # This ensures the UI is NEVER empty.
+                upcoming_static = self._get_local_schedule()
+                for match in upcoming_static[:5]:
+                    m_id = match['match_id']
+                    if not self.redis_client.exists(f"active:match:{m_id}"):
+                        # Register as 'scheduled' status
+                        match['status'] = 'scheduled'
+                        self._register_match(match)
+                        logger.info(f"💾 Registered static match: {match['teams']}")
+
                 # 1. Instantly check via lightweight JSON if a match is ALREADY live
                 live_matches = await CricbuzzAPI.get_live_matches()
                 

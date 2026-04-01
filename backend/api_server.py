@@ -227,17 +227,40 @@ def get_redis() -> Optional[redis.Redis]:
 
 # ─── Background Match Discovery ──────────────────────────────────────────────
 async def run_discovery_loop(app: FastAPI):
-    """Periodically scan for live IPL matches and auto-start scrapers."""
+    """Periodically scan for live IPL matches and inject static schedule if empty."""
     await asyncio.sleep(5)  # Let startup finish
     while True:
         try:
+            r = get_redis()
+            if not r:
+                await asyncio.sleep(60)
+                continue
+
             from backend.data_pipeline.cricbuzz_api import CricbuzzAPI
             matches = await CricbuzzAPI.get_live_matches()
+            
+            # Injection: Always ensure next 5 matches from static schedule are in Redis
+            try:
+                from backend.data_pipeline.match_discovery import MatchDiscoveryService
+                service = MatchDiscoveryService()
+                upcoming = service._get_local_schedule()
+                for match in upcoming[:5]:
+                    m_key = f"active:match:{match['match_id']}"
+                    if not r.exists(m_key):
+                        match['status'] = 'scheduled'
+                        r.hset(m_key, mapping=match)
+                        r.expire(m_key, 86400) # 24 hours for scheduled
+            except Exception as e:
+                logger.warning(f"Static schedule injection failed: {e}")
+
             if matches:
                 logger.info(f"🔎 Discovery scan: {len(matches)} live IPL matches found")
 
             for m in matches:
                 m_id = m['match_id']
+                m_key = f"active:match:{m_id}"
+                
+                # Check for live scraper
                 if m_id not in active_scrapers:
                     logger.info(f"🔥 Auto-starting scraper for: {m.get('teams', m_id)}")
                     try:
@@ -245,19 +268,12 @@ async def run_discovery_loop(app: FastAPI):
                         scraper = ESPNCricinfoScraper()
                         task = asyncio.create_task(scraper.start_polling(m_id, m['url']))
                         active_scrapers[m_id] = task
+                        
+                        # Mark as live in Redis
+                        m['status'] = 'live'
+                        r.hset(m_key, mapping=m)
                     except Exception as scraper_err:
                         logger.error(f"Failed to start scraper for {m_id}: {scraper_err}")
-
-                    if db_manager:
-                        try:
-                            await db_manager.save_match({
-                                'match_id': m_id,
-                                'teams': m.get('teams', '').split(' vs ') if isinstance(m.get('teams'), str) else [],
-                                'status': 'live',
-                                'metadata': {'url': m['url']}
-                            })
-                        except Exception as db_err:
-                            logger.error(f"DB save error: {db_err}")
 
         except Exception as e:
             logger.error(f"Discovery loop error: {e}")
@@ -296,34 +312,54 @@ async def health_check():
 
 @app.get("/matches")
 async def list_matches():
-    """List all active matches from Redis."""
+    """List all discovered matches (Live and Scheduled)."""
     r = get_redis()
     if not r:
         return []
+    
     try:
-        keys = r.keys("ipl:balls:*")
-        match_ids = [k.split(":")[-1] for k in keys]
+        keys = r.keys("active:match:*")
         matches = []
-        for mid in match_ids:
-            try:
-                last_ball = r.xrevrange(f"ipl:balls:{mid}", count=1)
-                if last_ball:
-                    data = last_ball[0][1]
-                    # Explicit casting prevents 500 serialization errors from NumPy types
-                    matches.append({
-                        "match_id": str(mid),
-                        "teams": [str(data.get('batting_team', 'N/A')), str(data.get('bowling_team', 'N/A'))],
-                        "inning": int(data.get('inning', 1)) if data.get('inning') else 1,
-                        "score": f"{data.get('runs', 0)}/{data.get('wicket', 0)}",
-                        "over": float(data.get('over', 0.0)) if data.get('over') else 0.0
-                    })
-            except Exception as e:
-                logger.warning(f"Error parsing match {mid} from Redis: {e}")
-                continue
+        for key in keys:
+            m_id = key.split(":")[-1]
+            data = r.hgetall(key)
+            status = data.get('status', 'scheduled')
+            
+            match_entry = {
+                "match_id": str(m_id),
+                "teams": data.get('teams', '').split(' vs ') if isinstance(data.get('teams'), str) else ["TBD", "TBD"],
+                "status": status,
+                "score": "0/0",
+                "over": 0.0,
+                "win_probability": 0.5
+            }
+
+            if status == 'live':
+                try:
+                    last_ball = r.xrevrange(f"ipl:balls:{m_id}", count=1)
+                    if last_ball:
+                        b_data = last_ball[0][1]
+                        match_entry["score"] = f"{b_data.get('runs', 0)}/{b_data.get('wicket', 0)}"
+                        match_entry["over"] = float(b_data.get('over', 0.0))
+                except Exception:
+                    pass
+            
+            # Add pre-match prediction if available for scheduled games
+            if predictor:
+                try:
+                    teams = match_entry["teams"]
+                    pred = predictor.model.predict_pre_match(teams[0], teams[1], data.get('venue', 'Unknown'))
+                    match_entry["win_probability"] = float(pred.get('win_probability', 0.5))
+                except Exception:
+                    pass
+                    
+            matches.append(match_entry)
+        
         return matches
     except Exception as e:
-        logger.error(f"List matches error: {e}")
+        logger.error(f"Error listing matches: {e}")
         return []
+
 @app.get("/upcoming/{season}")
 async def get_upcoming_matches(season: str):
     """Fetch upcoming schedule dynamically from the injected CSV."""

@@ -11,6 +11,9 @@ license: mit
 
 # IPL Prediction Engine (Hybrid XGBoost + LSTM)
 
+## 🌐 Live Demo
+**Hugging Face Space**: [zeroday01/ipl_prediction_engine](https://huggingface.co/spaces/zeroday01/ipl_prediction_engine)
+
 A high-performance machine learning engine designed to predict IPL match outcomes and ball-by-ball win probabilities using a hybrid ensemble architecture.
 
 ## 🚀 Key Features

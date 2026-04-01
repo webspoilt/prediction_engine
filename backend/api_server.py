@@ -103,6 +103,7 @@ async def lifespan(app: FastAPI):
             betting_engine = None
 
         # 5. Background Match Discovery (auto-detect live IPL matches)
+        load_static_schedule_to_cache()
         app.state.discovery_task = asyncio.create_task(
             run_discovery_loop(app), name="match_discovery"
         )
@@ -151,6 +152,36 @@ predictor = None
 db_manager = None
 betting_engine = None
 active_scrapers: Dict[str, asyncio.Task] = {}
+GLOBAL_MATCH_CACHE: Dict[str, Dict] = {}
+
+def load_static_schedule_to_cache():
+    """Seed the memory cache with upcoming matches from CSV (Zero-Redis safety)."""
+    import csv
+    from datetime import datetime, timezone, timedelta
+    
+    csv_path = os.path.join(os.path.dirname(__file__), 'data_pipeline', 'ipl_2026_schedule.csv')
+    if not os.path.exists(csv_path):
+        logger.warning(f"⚠️ Schedule CSV not found at {csv_path}")
+        return
+
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                m_id = f"scheduled_{row['Match']}"
+                teams = row['Match details'].split(' vs ')
+                GLOBAL_MATCH_CACHE[m_id] = {
+                    "match_id": m_id,
+                    "teams": teams if len(teams) == 2 else ["TBD", "TBD"],
+                    "status": "scheduled",
+                    "venue": row['Venue'],
+                    "score": "0/0",
+                    "over": 0.0,
+                    "win_probability": 0.5
+                }
+        logger.info(f"✅ Pre-loaded {len(GLOBAL_MATCH_CACHE)} matches into memory")
+    except Exception as e:
+        logger.error(f"Failed to seed match cache: {e}")
 
 # ─── Agent Simulator (lazy init) ─────────────────────────────────────────────
 _agent_swarm = None
@@ -312,53 +343,59 @@ async def health_check():
 
 @app.get("/matches")
 async def list_matches():
-    """List all discovered matches (Live and Scheduled)."""
-    r = get_redis()
-    if not r:
-        return []
+    """List all matches (Local Memory Cache + Redis Fallback)."""
+    # 1. Start with the pre-loaded static schedule
+    merged_matches = list(GLOBAL_MATCH_CACHE.values())
     
-    try:
-        keys = r.keys("active:match:*")
-        matches = []
-        for key in keys:
-            m_id = key.split(":")[-1]
-            data = r.hgetall(key)
-            status = data.get('status', 'scheduled')
-            
-            match_entry = {
-                "match_id": str(m_id),
-                "teams": data.get('teams', '').split(' vs ') if isinstance(data.get('teams'), str) else ["TBD", "TBD"],
-                "status": status,
-                "score": "0/0",
-                "over": 0.0,
-                "win_probability": 0.5
-            }
+    # 2. Try to add live data from Redis if available
+    r = get_redis()
+    if r:
+        try:
+            keys = r.keys("active:match:*")
+            for key in keys:
+                m_id = key.split(":")[-1]
+                data = r.hgetall(key)
+                
+                # Update or insert live match
+                match_entry = {
+                    "match_id": str(m_id),
+                    "teams": data.get('teams', '').split(' vs ') if isinstance(data.get('teams'), str) else ["TBD", "TBD"],
+                    "status": data.get('status', 'live'),
+                    "score": "0/0",
+                    "over": 0.0,
+                    "win_probability": 0.5
+                }
 
-            if status == 'live':
+                if match_entry["status"] == 'live':
+                    try:
+                        last_ball = r.xrevrange(f"ipl:balls:{m_id}", count=1)
+                        if last_ball:
+                            b_data = last_ball[0][1]
+                            match_entry["score"] = f"{b_data.get('runs', 0)}/{b_data.get('wicket', 0)}"
+                            match_entry["over"] = float(b_data.get('over', 0.0))
+                    except Exception: pass
+
+                # Deduplicate and prioritize live entries over static
+                idx = -1
+                for i, existing in enumerate(merged_matches):
+                    if existing["match_id"] == match_entry["match_id"] or existing["teams"] == match_entry["teams"]:
+                        idx = i; break
+                if idx != -1: merged_matches[idx] = match_entry
+                else: merged_matches.append(match_entry)
+
+        except Exception as e:
+            logger.error(f"Redis match merge error: {e}")
+
+    # 3. Add Win Probabilities (Pre-match or In-memory live)
+    if predictor:
+        for m in merged_matches:
+            if m.get("win_probability") == 0.5:
                 try:
-                    last_ball = r.xrevrange(f"ipl:balls:{m_id}", count=1)
-                    if last_ball:
-                        b_data = last_ball[0][1]
-                        match_entry["score"] = f"{b_data.get('runs', 0)}/{b_data.get('wicket', 0)}"
-                        match_entry["over"] = float(b_data.get('over', 0.0))
-                except Exception:
-                    pass
-            
-            # Add pre-match prediction if available for scheduled games
-            if predictor:
-                try:
-                    teams = match_entry["teams"]
-                    pred = predictor.model.predict_pre_match(teams[0], teams[1], data.get('venue', 'Unknown'))
-                    match_entry["win_probability"] = float(pred.get('win_probability', 0.5))
-                except Exception:
-                    pass
-                    
-            matches.append(match_entry)
-        
-        return matches
-    except Exception as e:
-        logger.error(f"Error listing matches: {e}")
-        return []
+                    pred = predictor.model.predict_pre_match(m["teams"][0], m["teams"][1], m.get("venue", "Unknown"))
+                    m["win_probability"] = float(pred.get("win_probability", 0.5))
+                except Exception: pass
+                
+    return merged_matches
 
 @app.get("/upcoming/{season}")
 async def get_upcoming_matches(season: str):

@@ -11,6 +11,12 @@ MATCHES_PATH = os.path.join(BASE_DIR, "ipl_matches.csv")
 BALLS_PATH = os.path.join(BASE_DIR, "ipl_ball.csv")
 
 try:
+    try:
+        from backend.ml_engine.analyze_recent_matches import ensure_base_csvs_exist
+        ensure_base_csvs_exist()
+    except Exception as e:
+        print(f"⚠️ Warning: Could not auto-initialize base CSVs: {e}")
+        
     matches_df = pd.read_csv(MATCHES_PATH)
     balls_df = pd.read_csv(BALLS_PATH)
 except Exception as e:

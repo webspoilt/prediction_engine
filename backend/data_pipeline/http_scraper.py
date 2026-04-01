@@ -19,7 +19,7 @@ from scrapling.fetchers import FetcherSession
 import redis
 from redis.asyncio import Redis as AsyncRedis
 
-from ws_sniffer import BallData
+from backend.models.match_models import BallData
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

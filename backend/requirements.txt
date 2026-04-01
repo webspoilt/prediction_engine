@@ -41,9 +41,7 @@ orjson>=3.9.0
 rich>=13.0.0
 
 # Scraping
-scrapling>=0.2.0
 curl_cffi
-browserforge
 lxml
 
 # Optional: Agent LLM mode

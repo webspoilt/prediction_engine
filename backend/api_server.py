@@ -156,6 +156,18 @@ def get_agent_swarm():
             _agent_swarm = None
     return _agent_swarm
 
+# ─── Scenario Simulator (lazy init) ───────────────────────────────────────────
+_scenario_sim = None
+def get_scenario_sim():
+    global _scenario_sim
+    if _scenario_sim is None:
+        try:
+            from backend.ml_engine.simulators import ScenarioSimulator
+            _scenario_sim = ScenarioSimulator()
+        except Exception:
+            _scenario_sim = None
+    return _scenario_sim
+
 
 class SimulationRequest(BaseModel):
     num_simulations: int = 1000
@@ -272,22 +284,6 @@ async def health_check():
     }
 
 
-@app.get("/upcoming/{season}")
-async def upcoming_matches(season: int):
-    from backend.data_pipeline.match_discovery import IPTLiveFeed
-    data = IPTLiveFeed.get_upcoming_matches(season)
-    if not data:
-        raise HTTPException(status_code=503, detail="Live feed unavailable")
-    return data
-
-
-@app.get("/points/{season}")
-async def points_table(season: int):
-    from backend.data_pipeline.match_discovery import IPTLiveFeed
-    data = IPTLiveFeed.get_points_table(season)
-    if not data:
-        raise HTTPException(status_code=503, detail="Points feed unavailable")
-    return data
 
 
 @app.get("/matches")
@@ -320,11 +316,66 @@ async def list_matches():
     except Exception as e:
         logger.error(f"List matches error: {e}")
         return []
+@app.get("/upcoming/{season}")
+async def get_upcoming_matches(season: str):
+    """Fetch upcoming schedule dynamically from the injected CSV."""
+    import csv
+    import os
+    from datetime import datetime, timedelta, timezone
+
+    ist_tz = timezone(timedelta(hours=5, minutes=30))
+    schedule_path = os.path.join(os.path.dirname(__file__), 'data_pipeline', 'ipl_2026_schedule.csv')
+    upcoming = []
+
+    try:
+        if os.path.exists(schedule_path):
+            with open(schedule_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    date_str = f"{row['Date']} {row['Time (IST)']}"
+                    try:
+                        dt = datetime.strptime(date_str, "%b %d, %Y %I:%M %p").replace(tzinfo=ist_tz)
+                        if dt.timestamp() > time.time():
+                            teams = row['Match details'].split(' vs ')
+                            teama = teams[0].strip() if len(teams) > 0 else "TBD"
+                            teamb = teams[1].strip() if len(teams) > 1 else "TBD"
+                            
+                            upcoming.append({
+                                "matchdate": row['Date'],
+                                "teama": teama,
+                                "teamb": teamb,
+                                "venue": row['Venue']
+                            })
+                    except Exception:
+                        continue
+                        
+        return {"matchschedule": upcoming}
+    except Exception as e:
+        logger.error(f"Error fetching upcoming schedule: {e}")
+        return {"matchschedule": []}
+
+@app.get("/points/{season}")
+async def get_points_table(season: str):
+    """Fetch Points Table. For now, returns a base template for 2026."""
+    teams = [
+        {"name": "Chennai Super Kings", "teamshortname": "CSK", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Delhi Capitals", "teamshortname": "DC", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Gujarat Titans", "teamshortname": "GT", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Kolkata Knight Riders", "teamshortname": "KKR", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Lucknow Super Giants", "teamshortname": "LSG", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Mumbai Indians", "teamshortname": "MI", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Punjab Kings", "teamshortname": "PBKS", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Rajasthan Royals", "teamshortname": "RR", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Royal Challengers Bengaluru", "teamshortname": "RCB", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+        {"name": "Sunrisers Hyderabad", "teamshortname": "SRH", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
+    ]
+    return {"points": teams}
+
 
 
 @app.get("/predict/{match_id}")
 async def get_prediction(match_id: str):
-    """Fetch latest win probability with betting odds enrichment."""
+    """Fetch latest win probability with uncertainty intervals, SHAP factors, and betting odds."""
     if not predictor:
         raise HTTPException(status_code=503, detail="ML Engine not initialized")
     try:
@@ -332,13 +383,30 @@ async def get_prediction(match_id: str):
         if "error" in prediction:
             raise HTTPException(status_code=404, detail=prediction["error"])
 
-        # Enrich with agent swarm
+        # ── Enrich with Scenario Simulator ──────────────────────────────────
+        scenario_sim = get_scenario_sim()
+        if scenario_sim:
+            try:
+                scenario = scenario_sim.simulate_remaining_balls(
+                    current_state=prediction, n_simulations=2000
+                )
+                prediction['scenario'] = scenario
+                # Surface key milestones at top level for the frontend
+                prediction['prob_180_plus'] = scenario.get('prob_180_plus', 0.0)
+                prediction['projected_score_p90'] = scenario.get('p90_score', 0.0)
+            except Exception as sim_err:
+                logger.warning(f"Scenario simulator skipped: {sim_err}")
+
+        # ── Enrich with Agent Swarm ──────────────────────────────────────────
         swarm = get_agent_swarm()
         if swarm:
-            agent_features = swarm.simulate(prediction)
-            prediction.update(agent_features)
+            try:
+                agent_features = swarm.simulate(prediction)
+                prediction.update(agent_features)
+            except Exception as swarm_err:
+                logger.warning(f"Agent swarm skipped: {swarm_err}")
 
-        # Enrich with betting odds
+        # ── Enrich with Betting Odds ─────────────────────────────────────────
         if betting_engine:
             r = get_redis()
             teams = ["Team A", "Team B"]
@@ -352,7 +420,7 @@ async def get_prediction(match_id: str):
             prediction['betting'] = odds_data.to_dict()
             prediction['model_accuracy'] = odds_data.model_accuracy
 
-        # Persist
+        # ── Persist asynchronously ───────────────────────────────────────────
         if db_manager:
             asyncio.create_task(db_manager.save_prediction(prediction))
 
@@ -362,6 +430,79 @@ async def get_prediction(match_id: str):
     except Exception as e:
         logger.error(f"Prediction error for {match_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal inference error")
+
+
+@app.get("/simulate/scenario/{match_id}")
+async def run_scenario_simulation(match_id: str, n: int = 5000):
+    """Run detailed Monte Carlo scenario simulation for remaining balls."""
+    r = get_redis()
+    if not r:
+        raise HTTPException(status_code=503, detail="Redis unavailable")
+
+    last_ball = r.xrevrange(f"ipl:balls:{match_id}", count=1)
+    if not last_ball:
+        raise HTTPException(status_code=404, detail="No match data found")
+
+    d = last_ball[0][1]
+    current_state = {
+        'total_runs': int(d.get('total_runs', 0) or 0),
+        'total_wickets': int(d.get('total_wickets', 0) or 0),
+        'balls_remaining': max(0, 120 - int(float(d.get('over', 0)) * 6)),
+    }
+
+    sim = get_scenario_sim()
+    if not sim:
+        raise HTTPException(status_code=503, detail="Simulator unavailable")
+
+    result = sim.simulate_remaining_balls(current_state, n_simulations=min(n, 10000))
+    return {"match_id": match_id, "current_state": current_state, "simulation": result}
+
+
+@app.get("/fantasy/{player_name}")
+async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role: str = 'batsman'):
+    """Get Bayesian fantasy points projection for a player."""
+    try:
+        from backend.ml_engine.simulators import BayesianPlayerPredictor, FantasyEngine
+        from backend.ml_engine.hybrid_model import CricsheetNormalizer
+
+        normalizer = CricsheetNormalizer()
+        normalizer.load_player_stats()
+
+        # Fetch historical stats from player_stats_db if available
+        bat_history, wkt_history = [], []
+        if normalizer.player_stats:
+            bat_data = normalizer.player_stats.get('batsmen', {}).get(player_name, {})
+            bowl_data = normalizer.player_stats.get('bowlers', {}).get(player_name, {})
+            # Simulate last-5 form from season average
+            if bat_data.get('average'):
+                avg = bat_data['average']
+                bat_history = [max(0, avg + np.random.normal(0, avg * 0.3)) for _ in range(5)]
+            if bowl_data.get('average'):
+                wkt_history = [max(0, np.random.normal(1.2, 0.5)) for _ in range(5)]
+
+        predictor_b = BayesianPlayerPredictor()
+        run_proj = predictor_b.predict_player_runs(bat_history, opp_strength=1.0)
+        wkt_proj = predictor_b.predict_player_wickets(wkt_history)
+
+        projection = {**run_proj, **wkt_proj}
+        fantasy = FantasyEngine()
+        fantasy_pts = fantasy.calculate_expected_points(
+            player_projection=projection,
+            role=role,
+            ownership_pct=float(ownership)
+        )
+
+        return {
+            "player": player_name,
+            "role": role,
+            "ownership_pct": round(ownership * 100, 1),
+            "batting_projection": run_proj,
+            "bowling_projection": wkt_proj,
+            "fantasy": fantasy_pts
+        }
+    except Exception as e:
+        logger.error(f"Fantasy projection error: {e}")
+        raise HTTPException(status_code=500, detail="Fantasy projection failed")
 
 
 @app.post("/simulate/{match_id}")

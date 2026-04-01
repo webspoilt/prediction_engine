@@ -50,3 +50,33 @@ async def test_predict_success():
     response = client.get("/predict/test_match")
     assert response.status_code == 200
     assert response.json()["win_probability"] == 0.65
+
+
+def test_upcoming_schedule():
+    """Verify upcoming matches endpoint returns schedule data from the CSV."""
+    response = client.get("/upcoming/2026")
+    assert response.status_code == 200
+    data = response.json()
+    assert "matchschedule" in data
+    # The schedule CSV has 70 entries; at least some should be upcoming
+    assert isinstance(data["matchschedule"], list)
+    if len(data["matchschedule"]) > 0:
+        match = data["matchschedule"][0]
+        assert "teama" in match
+        assert "teamb" in match
+        assert "venue" in match
+        assert "matchdate" in match
+
+
+def test_points_table():
+    """Verify points table endpoint returns all 10 IPL teams."""
+    response = client.get("/points/2026")
+    assert response.status_code == 200
+    data = response.json()
+    assert "points" in data
+    assert len(data["points"]) == 10
+    team = data["points"][0]
+    assert "name" in team
+    assert "teamshortname" in team
+    assert "matchesplayed" in team
+    assert "points" in team

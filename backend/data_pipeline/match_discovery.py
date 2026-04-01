@@ -1,132 +1,80 @@
 import asyncio
 import logging
 import json
-import os
 import redis
+import time
 from typing import List, Dict
-import requests
-import pandas as pd
-from datetime import datetime
-from scrapling import Fetcher
+
+# High-speed JSON API client
+from backend.data_pipeline.cricbuzz_api import CricbuzzAPI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Target URL for live scores
-LIVE_SCORES_URL = "https://www.cricbuzz.com/cricket-match/live-scores"
-IPL_SERIES_NAME = "Indian Premier League"
-
-class IPTLiveFeed:
-    BASE_URL = "https://ipl-stats-sports-mechanic.s3.ap-south-1.amazonaws.com/ipl/feeds/"
-    
-    @staticmethod
-    def get_upcoming_matches(season):
-        url = f"{IPTLiveFeed.BASE_URL}{season}-matchschedule.js?"
-        try:
-            resp = requests.get(url)
-            if resp.status_code != 200:
-                # Fallback to Cricbuzz scraping (implement as needed)
-                return None
-            return resp.json()
-        except requests.RequestException as e:
-            logger.error(f"Error fetching upcoming matches: {e}")
-            return None
-    
-    @staticmethod
-    def get_points_table(season):
-        url = f"{IPTLiveFeed.BASE_URL}stats/{season}-groupstandings.js?"
-        try:
-            resp = requests.get(url)
-            if resp.status_code != 200:
-                return None
-            return resp.json()
-        except requests.RequestException as e:
-            logger.error(f"Error fetching points table: {e}")
-            return None
-
-def trigger_retraining(new_match_id):
-    # Download new match JSON, run consolidate_data.py incrementally
-    # Then retrain your XGBoost+LSTM model
-    logger.info(f"Triggering retraining for new match completion: {new_match_id}")
-    pass
-
-
 class MatchDiscoveryService:
     """
-    Background worker that scans for live IPL matches.
-    If a match is found, it registers it in Redis and triggers scraping.
+    Background worker that schedules itself based on the Indian Premier League timetable.
+    Eliminates constant 5-second scraping polling.
     """
     
     def __init__(self, redis_host='localhost', redis_port=6379):
         self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
-        self.poll_interval = 300  # 5 minutes
         self.active_scrapers = {} # match_id -> Task
+        self.default_poll = 300  # Fallback 5 mins if no schedule found
 
     async def run(self):
-        """Main loop for match discovery"""
-        logger.info("🚀 Starting Automated Match Discovery Service...")
+        """Main loop: Find live matches or sleep until the next scheduled match."""
+        logger.info("🚀 Starting Pro V3 Intelligent Match Discovery Service...")
+        
         while True:
             try:
-                live_matches = self._find_live_ipl_matches()
-                logger.info(f"🔎 Discovery found {len(live_matches)} active IPL matches.")
+                # 1. Instantly check via lightweight JSON if a match is ALREADY live
+                live_matches = await CricbuzzAPI.get_live_matches()
                 
-                for match in live_matches:
-                    match_id = match['match_id']
-                    if not self.redis_client.exists(f"active:match:{match_id}"):
-                        logger.info(f"🟢 New Match Detected! {match['teams']} - {match_id}")
-                        self._register_match(match)
+                if live_matches:
+                    logger.info(f"🔎 JSON API found {len(live_matches)} active IPL matches.")
+                    for match in live_matches:
+                        match_id = match['match_id']
+                        if not self.redis_client.exists(f"active:match:{match_id}"):
+                            logger.info(f"🟢 New Match Detected! {match['teams']} - {match_id}")
+                            self._register_match(match)
+                            
+                    # While matches are live, poll every 5 mins to check for new ones or closures
+                    await asyncio.sleep(self.default_poll)
+                    continue
+
+                # 2. No live matches? Fetch schedule and calculate exact sleep time!
+                upcoming_matches = await CricbuzzAPI.get_match_schedule()
                 
-                # Cleanup finished matches (simplified)
-                # In a real app, we would check if match status is 'result' or 'complete'
-                
+                # FALLBACK strictly to our local, verified 2026 Timetable if API is empty
+                if not upcoming_matches:
+                    upcoming_matches = self._get_local_schedule()
+                    
+                if upcoming_matches:
+                    next_match = upcoming_matches[0]
+                    # start_time is usually epoch seconds or milliseconds. 
+                    # If it's a 13-digit number, it's milliseconds.
+                    start_epoch = next_match['start_time']
+                    if start_epoch > 10000000000:
+                        start_epoch = start_epoch / 1000.0
+                        
+                    time_until_match = start_epoch - time.time()
+                    
+                    if time_until_match > 600:
+                        # Sleep until 10 minutes before the match!
+                        sleep_seconds = time_until_match - 600
+                        logger.info(f"⏳ No matches live. Next match ({next_match['teams']}) starts in {int(time_until_match/60)} mins.")
+                        logger.info(f"😴 Engine pausing discovery loop for {int(sleep_seconds)} seconds. Zzz...")
+                        await asyncio.sleep(sleep_seconds)
+                        continue
+                        
+                # 3. Fallback: If no schedule and no live matches, poll every 5 minutes
+                await asyncio.sleep(self.default_poll)
+
             except Exception as e:
                 logger.error(f"Error in discovery loop: {e}")
-                
-            await asyncio.sleep(self.poll_interval)
-
-    def _find_live_ipl_matches(self) -> List[Dict]:
-        """Scrape Cricbuzz to find live IPL matches"""
-        found_matches = []
-        try:
-            # Using Scrapling Fetcher with curl_cffi adapter (no Playwright needed)
-            fetcher = Fetcher(adapter='curl_cffi', auto_match=True)
-            page = fetcher.get(LIVE_SCORES_URL)
-            
-            # Find the IPL section
-            # Cricbuzz structure: Series headings are usually in h2 or specific classes
-            # We look for containers containing "Indian Premier League"
-            
-            # This is a heuristic parser for Cricbuzz Live Score page
-            series_containers = page.css('.cb-mtch-lst') # Match list containers
-            
-            for container in series_containers:
-                series_link = container.css('.cb-lv-grps-hdr a::text').get()
-                if series_link and IPL_SERIES_NAME.lower() in series_link.lower():
-                    # This cluster belongs to IPL
-                    matches = container.css('.cb-col-100.cb-col.cb-schdl-itm')
-                    for match in matches:
-                        match_link = match.css('a::attr(href)').get()
-                        if match_link:
-                            # Extract Match ID from URL like '/live-cricket-scores/12345/match-name'
-                            parts = match_link.split('/')
-                            m_id = parts[2] if len(parts) > 2 else "unknown"
-                            
-                            match_url = f"https://www.cricbuzz.com{match_link}"
-                            teams = match.css('.cb-lv-scr-mtch-hdr a::text').get()
-                            
-                            found_matches.append({
-                                'match_id': m_id,
-                                'url': match_url,
-                                'teams': teams,
-                                'status': 'live'
-                            })
-                            
-            return found_matches
-            
-        except Exception as e:
-            logger.error(f"Scraping error in _find_live_ipl_matches: {e}")
-            return []
+                await asyncio.sleep(self.default_poll)
 
     def _register_match(self, match: Dict):
         """Store match in Redis and notify the system"""
@@ -142,6 +90,46 @@ class MatchDiscoveryService:
         
         # Publish notification for any listening backend workers
         self.redis_client.publish("match:discovered", json.dumps(match))
+
+    def _get_local_schedule(self) -> List[Dict]:
+        """Parses the official IPL 2026 CSV timetable into exact Epoch timestamps."""
+        upcoming = []
+        try:
+            import csv
+            import os
+            from datetime import datetime, timezone, timedelta
+            
+            # IST is UTC + 5:30
+            ist_offset = timedelta(hours=5, minutes=30)
+            ist_tz = timezone(ist_offset)
+            
+            csv_path = os.path.join(os.path.dirname(__file__), 'ipl_2026_schedule.csv')
+            
+            if not os.path.exists(csv_path):
+                return []
+                
+            with open(csv_path, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    date_str = f"{row['Date']} {row['Time (IST)']}"
+                    try:
+                        dt = datetime.strptime(date_str, "%b %d, %Y %I:%M %p")
+                        dt_ist = dt.replace(tzinfo=ist_tz)
+                        start_epoch = dt_ist.timestamp()
+                        
+                        if start_epoch > time.time():
+                            upcoming.append({
+                                'match_id': f"official_{row['Match']}",
+                                'teams': row['Match details'],
+                                'start_time': start_epoch
+                            })
+                    except Exception as parse_err:
+                        continue
+                        
+            upcoming.sort(key=lambda x: x['start_time'])
+        except Exception as e:
+            logger.error(f"Local schedule fallback error: {e}")
+        return upcoming
 
 async def main():
     service = MatchDiscoveryService()

@@ -19,8 +19,8 @@ from dataclasses import dataclass, asdict
 from concurrent.futures import ThreadPoolExecutor
 import threading
 
-# Playwright for WebSocket interception
-from playwright.async_api import async_playwright, Page, WebSocket
+# Playwright for WebSocket interception (Deferred import)
+# Imported locally in _discover_ws_connection to avoid HF Spaces crash
 
 # Redis for state management
 import redis
@@ -38,48 +38,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class BallData:
-    """Standardized ball-by-ball data structure"""
-    match_id: str
-    inning: int
-    over: float
-    batsman: str
-    bowler: str
-    runs: int
-    extras: int
-    wicket: bool
-    wicket_type: Optional[str]
-    timestamp: float
-    batting_team: str
-    bowling_team: str
-    total_runs: int
-    total_wickets: int
-    
-    def to_dict(self) -> Dict:
-        return asdict(self)
-    
-    @classmethod
-    def from_dict(cls, data: Dict) -> 'BallData':
-        return cls(**data)
-
-
-@dataclass
-class MatchState:
-    """Current match state for prediction"""
-    match_id: str
-    inning: int
-    over: float
-    total_runs: int
-    total_wickets: int
-    crr: float  # Current Run Rate
-    rrr: float  # Required Run Rate
-    target: Optional[int]
-    powerplay: bool
-    batting_team: str
-    bowling_team: str
-    last_18_balls: List[BallData]
-    timestamp: float
+from backend.models.match_models import BallData, MatchState
 
 
 class WebSocketSniffer:
@@ -129,6 +88,7 @@ class WebSocketSniffer:
         and required headers.
         """
         import websockets # Ensure we have the library
+        from playwright.async_api import async_playwright, Page, WebSocket
         
         playwright = await async_playwright().start()
         browser = await playwright.chromium.launch(

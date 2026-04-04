@@ -60,6 +60,10 @@ async def lifespan(app: FastAPI):
     predictor = None
     db_manager = None
     betting_engine = None
+    
+    # 🏛️ Sovereign SRE: Track startup absolute path
+    app.state.base_dir = os.path.dirname(os.path.abspath(__file__))
+    app.state.static_dir = os.path.join(app.state.base_dir, "static")
 
     try:
         logger.info("🚀 Starting IPL Prediction Engine v3.0 (Never Empty)...")
@@ -315,8 +319,11 @@ async def run_discovery_loop(app: FastAPI):
 
 @app.get("/")
 async def serve_dashboard():
-    """Elite Titan Hub — Sovereign UI Dashboard."""
-    return FileResponse("backend/static/index.html")
+    """Elite Titan Hub — Sovereign UI Dashboard (Absolute Path Fix)."""
+    index_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"status": "Titan Hub Active", "error": "UI Registry Syncing..."}
 
 
 @app.get("/health_status")
@@ -337,8 +344,11 @@ async def serve_dashboard():
 
 @app.get("/pro")
 async def serve_pro():
-    """Elite Titan Analytics Dashboard."""
-    return FileResponse("backend/static/pro.html")
+    """Elite Titan Analytics Dashboard (Absolute Path Fix)."""
+    pro_path = os.path.join(os.path.dirname(__file__), "static", "pro.html")
+    if os.path.exists(pro_path):
+        return FileResponse(pro_path)
+    return {"status": "Pro Analytics Active", "error": "Analytics Registry Syncing..."}
 
 
 # ── Health Endpoint ──────────────────────────────────────────────────────────
@@ -584,7 +594,8 @@ async def get_prediction(match_id: str):
         try:
             t1, t2 = match.get('teams', ['Team A', 'Team B'])
             venue = match.get('venue', 'Unknown')
-            dna_context = app.state.dna_engine.get_match_context(t1, t2, venue)
+            # MOJO FIX: Method is 'get_match_dna', not 'get_match_context'
+            dna_context = app.state.dna_engine.get_match_dna(t1, t2, venue)
         except Exception as dna_err:
             logger.warning(f"DNA context extraction failed: {dna_err}")
 

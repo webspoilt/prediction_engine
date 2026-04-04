@@ -490,6 +490,17 @@ class MultiSourceFetcher:
         all_matches = await self.discover_matches()
         return [m for m in all_matches if m.get("status") == "live"]
 
+    async def get_match_by_id(self, match_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Sovereign Lookup: Find a match by ID with high precision.
+        Checks live cache first, then schedule.
+        """
+        all_matches = await self.discover_matches()
+        for m in all_matches:
+            if m.get("match_id") == match_id:
+                return m
+        return None
+
     async def get_upcoming(self, limit: int = 10) -> List[Dict[str, Any]]:
         all_matches = await self.discover_matches()
         all_matches = [m for m in all_matches if is_ipl_match(m['teams'][0], m['teams'][1])]

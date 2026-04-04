@@ -25,6 +25,16 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
 ]
 
+_IMPERSONATES = [
+    "chrome110", "chrome116", "chrome120",
+    "safari15_3", "safari15_5", "safari17_0",
+    "edge99", "edge101"
+]
+
+def get_random_impersonate():
+    import random
+    return random.choice(_IMPERSONATES)
+
 
 def _get_ua() -> str:
     """Rotate user agents based on time to reduce fingerprinting."""
@@ -43,7 +53,7 @@ async def read_url_via_jina(url: str, timeout: int = 15) -> Optional[str]:
     jina_url = f"{JINA_READER_BASE}/{url}"
     try:
         from curl_cffi.requests import AsyncSession
-        async with AsyncSession(impersonate="chrome110") as session:
+        async with AsyncSession(impersonate=get_random_impersonate()) as session:
             resp = await session.get(
                 jina_url,
                 headers={"Accept": "text/markdown", "User-Agent": _get_ua()},
@@ -65,7 +75,7 @@ async def fetch_raw_html(url: str, timeout: int = 12) -> Optional[str]:
     """Fetch raw HTML from a URL using curl_cffi with Chrome impersonation."""
     try:
         from curl_cffi.requests import AsyncSession
-        async with AsyncSession(impersonate="chrome110") as session:
+        async with AsyncSession(impersonate=get_random_impersonate()) as session:
             resp = await session.get(
                 url,
                 headers={

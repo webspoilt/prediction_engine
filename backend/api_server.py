@@ -24,6 +24,11 @@ from pydantic import BaseModel
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from contextlib import asynccontextmanager
+import psutil
+
+def get_memory_usage():
+    process = psutil.Process(os.getpid())
+    return process.memory_info().rss / 1024 / 1024  # Returns MB
 
 from backend.config import settings
 
@@ -459,6 +464,7 @@ async def data_health():
     health["redis_connected"] = r is not None
     health["ml_engine_loaded"] = predictor is not None
     health["server_uptime"] = time.time()
+    health["memory_usage_mb"] = round(get_memory_usage(), 2)
     return health
 
 

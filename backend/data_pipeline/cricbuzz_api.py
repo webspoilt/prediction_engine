@@ -11,6 +11,16 @@ import time
 from typing import List, Dict, Optional
 
 from curl_cffi.requests import AsyncSession
+import random
+
+_IMPERSONATES = [
+    "chrome110", "chrome116", "chrome120",
+    "safari15_3", "safari15_5", "safari17_0",
+    "edge99", "edge101"
+]
+
+def get_random_impersonate():
+    return random.choice(_IMPERSONATES)
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +81,7 @@ class CricbuzzAPI:
 
         url = "https://hs-consumer-api.espncricinfo.com/v1/pages/matches/current?lang=en&clubId=null"
         try:
-            async with AsyncSession(impersonate="chrome110") as s:
+            async with AsyncSession(impersonate=get_random_impersonate()) as s:
                 resp = await s.get(url, timeout=10)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -111,7 +121,7 @@ class CricbuzzAPI:
 
         url = f"{cls.BASE_URL}/livematches.json"
         try:
-            async with AsyncSession(impersonate="chrome110") as s:
+            async with AsyncSession(impersonate=get_random_impersonate()) as s:
                 resp = await s.get(url, timeout=10)
                 if resp.status_code == 200:
                     data = resp.json()
@@ -150,7 +160,7 @@ class CricbuzzAPI:
 
         url = f"{cls.BASE_URL}/livematches.json"
         try:
-            async with AsyncSession(impersonate="chrome110") as s:
+            async with AsyncSession(impersonate=get_random_impersonate()) as s:
                 resp = await s.get(url, timeout=10)
                 if resp.status_code == 200:
                     data = resp.json()

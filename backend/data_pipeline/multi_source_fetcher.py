@@ -19,6 +19,16 @@ Audit Fixes Applied:
 
 import asyncio
 import copy
+import random
+
+_IMPERSONATES = [
+    "chrome110", "chrome116", "chrome120", 
+    "safari15_3", "safari15_5", "safari17_0",
+    "edge99", "edge101"
+]
+
+def get_random_impersonate():
+    return random.choice(_IMPERSONATES)
 import csv
 import json
 import logging
@@ -552,7 +562,7 @@ class MultiSourceFetcher:
         """Source 1: ESPN Cricinfo Consumer API."""
         url = "https://hs-consumer-api.espncricinfo.com/v1/pages/matches/current?lang=en&clubId=null"
         from curl_cffi.requests import AsyncSession
-        async with AsyncSession(impersonate="chrome110") as s:
+        async with AsyncSession(impersonate=get_random_impersonate()) as s:
             resp = await s.get(url, timeout=10)
             if resp.status_code != 200:
                 return []
@@ -614,7 +624,7 @@ class MultiSourceFetcher:
         """Source 2: Cricbuzz JSON API."""
         url = "https://www.cricbuzz.com/match-api/livematches.json"
         from curl_cffi.requests import AsyncSession
-        async with AsyncSession(impersonate="chrome110") as s:
+        async with AsyncSession(impersonate=get_random_impersonate()) as s:
             resp = await s.get(url, timeout=10)
             if resp.status_code != 200:
                 return []

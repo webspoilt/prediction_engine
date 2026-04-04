@@ -184,6 +184,7 @@
             border-color: var(--border-glow);
             box-shadow: var(--shadow-glow);
             transform: translateY(-2px);
+            cursor: pointer;
         }
         .match-card:hover::before { opacity: 1; }
 
@@ -707,7 +708,7 @@
         }
 
         return `
-        <div class="${cardClass}" id="card-${match.match_id}">
+        <div class="${cardClass}" id="card-${match.match_id}" onclick="window.location='/pro?match_id=${match.match_id}'">
             <div class="card-header">
                 <div class="match-meta">
                     <span class="match-label">${matchNum ? 'Match ' + matchNum : 'IPL 2026'} • ${venue}</span>

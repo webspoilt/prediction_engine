@@ -43,10 +43,55 @@ rich>=13.0.0
 # Scraping
 curl_cffi
 lxml
+# Core Dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Deep Learning
+torch>=2.0.0
+
+# ML Models
+xgboost>=1.7.0
+
+# Web Scraping & HTTP
+beautifulsoup4>=4.12.0
+aiohttp>=3.8.0
+requests>=2.31.0
+
+# Data & State Management
+redis>=4.6.0
+hiredis>=2.2.0
+
+# API & Web Framework
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6
+
+# Configuration & Utilities
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# HuggingFace
+huggingface_hub
+
+# Database
+asyncpg
+
+# Serialization
+orjson>=3.9.0
+
+# Logging
+rich>=13.0.0
+
+# Scraping
+curl_cffi
+lxml
 
 # Optional: Agent LLM mode
 # openai
 
 # Optional: Experiment tracking
 # mlflow
-joblib
+psutil

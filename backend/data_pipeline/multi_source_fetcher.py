@@ -564,6 +564,7 @@ class MultiSourceFetcher:
         from curl_cffi.requests import AsyncSession
         async with AsyncSession(impersonate=get_random_impersonate()) as s:
             resp = await s.get(url, timeout=10)
+            logger.info(f"📡 ESPN API Status: {resp.status_code}")
             if resp.status_code != 200:
                 return []
             data = resp.json()
@@ -626,6 +627,7 @@ class MultiSourceFetcher:
         from curl_cffi.requests import AsyncSession
         async with AsyncSession(impersonate=get_random_impersonate()) as s:
             resp = await s.get(url, timeout=10)
+            logger.info(f"📡 Cricbuzz API Status: {resp.status_code}")
             if resp.status_code != 200:
                 return []
             data = resp.json()
@@ -711,14 +713,27 @@ class MultiSourceFetcher:
             pair = tuple(sorted(m.get("teams") or []))
             if not pair:
                 continue
+                
             if pair not in existing_team_pairs:
                 merged.append(m)
                 existing_team_pairs.add(pair)
-            elif m.get("status") == "live":
-                # Live data takes priority
+            else:
+                # ── Intelligent Override Logic (Titan v4.0) ──────────────────
                 for i, ex in enumerate(merged):
                     if tuple(sorted(ex.get("teams") or [])) == pair:
-                        merged[i] = m
+                        # Priority 1: If existing is NOT live but new IS live
+                        if ex.get("status") != "live" and m.get("status") == "live":
+                            merged[i] = m
+                            break
+                        # Priority 2: If both are live, check for placeholders
+                        if ex.get("status") == "live" and m.get("status") == "live":
+                            ex_score = ex.get("score", "—")
+                            m_score = m.get("score", "—")
+                            # If existing is a common placeholder but new has real data
+                            placeholders = ("1/0", "0/0", "—", "0", "")
+                            if ex_score in placeholders and m_score not in placeholders:
+                                logger.info(f"🔥 Overriding placeholder {ex_score} with {m_score} from {m.get('source')}")
+                                merged[i] = m
                         break
         return merged
 

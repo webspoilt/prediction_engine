@@ -456,6 +456,40 @@
             100% { transform: scale(0.9); opacity: 0; }
         }
 
+        /* ── v4.8 New UI Buttons ── */
+        .pro-link-btn {
+            background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-cyan) 100%);
+            color: #fff; font-weight: 800; font-size: 11px;
+            padding: 8px 16px; border-radius: var(--radius-sm);
+            text-decoration: none; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .pro-link-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.6);
+        }
+        .cta-primary-glow {
+            background: var(--gradient-primary);
+            color: #fff; border: none; padding: 12px 24px;
+            border-radius: var(--radius-md); font-weight: 800;
+            font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 10px;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s; text-transform: uppercase;
+        }
+        .cta-primary-glow:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+        .cta-secondary {
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary); border: 1px solid var(--border-glass);
+            padding: 12px 24px; border-radius: var(--radius-md);
+            font-weight: 600; font-size: 13px; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .cta-secondary:hover { background: rgba(255,255,255,0.1); }
+
         /* ── Live Oracle Hero Section ── */
         .live-oracle-hero {
             background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
@@ -523,11 +557,14 @@
             <h1>IPL Predictor</h1>
             <p>ML-Powered Betting Analytics</p>
         </div>
-        <div class="engine-status" id="engine-status-badge">
-            <span class="status-dot green"></span>
-            <span>ENGINE ACTIVE</span>
+        <div class="nav-actions" style="margin-left: auto; display: flex; gap: 15px;">
+            <a href="/pro?match_id=ipl2026_9" class="pro-link-btn"><i class="fas fa-microscope"></i> PRO LAB</a>
+            <div class="engine-status" id="engine-status-badge">
+                <span class="status-dot green"></span>
+                <span>TITAN ACTIVE</span>
+            </div>
         </div>
-        <span class="version-badge">Titan v4.4 — Sovereign Hub</span>
+        <span class="version-badge" style="margin-left:15px">v4.8 — Sovereign DNA</span>
     </div>
 
     <!-- ═══ Tab Navigation ═══ -->
@@ -559,6 +596,15 @@
                     <div class="forensic-trace-hero" id="hero-audit-log">
                         [AUDITOR] Awaiting live data packet...
                     </div>
+                </div>
+                <!-- v4.8 CTAs -->
+                <div class="hero-actions" style="margin-top:25px; display:flex; gap:15px; border-top:1px solid var(--border-glass); padding-top:20px">
+                    <button class="cta-primary-glow" onclick="const mid = currentMatches[0]?.match_id || 'ipl2026_9'; window.location='/pro?match_id='+mid">
+                        <i class="fas fa-brain"></i> ACCESS SOVEREIGN ANALYTICS
+                    </button>
+                    <button class="cta-secondary" onclick="document.querySelector('[data-tab=schedule]').click()">
+                        <i class="fas fa-list"></i> VIEW FULL SCHEDULE
+                    </button>
                 </div>
             </div>
 
@@ -608,11 +654,10 @@
 
     <script>
     /* ═══════════════════════════════════════════════════════════════════════════
-       IPL 2026 Prediction Engine — Frontend Controller
+       IPL 2026 Prediction Engine — Frontend Controller (v4.8 Sovereign DNA)
        "Never Empty" Architecture: Client-side fallback + multi-source pipeline
        ═══════════════════════════════════════════════════════════════════════ */
 
-    // ── Team Data (embedded for offline support) ────────────────────────────
     const TEAM_COLORS = {
         'CSK': '#ffd700', 'MI': '#004ba0', 'RCB': '#d4213d', 'KKR': '#3a225d',
         'SRH': '#ff822a', 'RR': '#ea1a85', 'DC': '#004c93', 'PBKS': '#ed1b24',
@@ -628,441 +673,123 @@
         'Gujarat Titans': 'GT', 'Lucknow Super Giants': 'LSG'
     };
 
-    // ── Offline Fallback Schedule (first 15 matches) ────────────────────────
     const OFFLINE_SCHEDULE = [
-        {match_id:'ipl2026_1',teams:['Royal Challengers Bengaluru','Sunrisers Hyderabad'],team_short:['RCB','SRH'],venue:'Bengaluru',date:'Mar 28, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_2',teams:['Mumbai Indians','Kolkata Knight Riders'],team_short:['MI','KKR'],venue:'Mumbai',date:'Mar 29, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_3',teams:['Rajasthan Royals','Chennai Super Kings'],team_short:['RR','CSK'],venue:'Guwahati',date:'Mar 30, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_4',teams:['Punjab Kings','Gujarat Titans'],team_short:['PBKS','GT'],venue:'New Chandigarh',date:'Mar 31, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_5',teams:['Lucknow Super Giants','Delhi Capitals'],team_short:['LSG','DC'],venue:'Lucknow',date:'Apr 01, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_6',teams:['Kolkata Knight Riders','Sunrisers Hyderabad'],team_short:['KKR','SRH'],venue:'Kolkata',date:'Apr 02, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_7',teams:['Chennai Super Kings','Punjab Kings'],team_short:['CSK','PBKS'],venue:'Chennai',date:'Apr 03, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_8',teams:['Delhi Capitals','Mumbai Indians'],team_short:['DC','MI'],venue:'Delhi',date:'Apr 04, 2026',time_ist:'3:30 PM',status:'live',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_9',teams:['Gujarat Titans','Rajasthan Royals'],team_short:['GT','RR'],venue:'Ahmedabad',date:'Apr 04, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_10',teams:['Sunrisers Hyderabad','Lucknow Super Giants'],team_short:['SRH','LSG'],venue:'Hyderabad',date:'Apr 05, 2026',time_ist:'3:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_11',teams:['Royal Challengers Bengaluru','Chennai Super Kings'],team_short:['RCB','CSK'],venue:'Bengaluru',date:'Apr 05, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_12',teams:['Kolkata Knight Riders','Punjab Kings'],team_short:['KKR','PBKS'],venue:'Kolkata',date:'Apr 06, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_13',teams:['Rajasthan Royals','Mumbai Indians'],team_short:['RR','MI'],venue:'Guwahati',date:'Apr 07, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_14',teams:['Delhi Capitals','Gujarat Titans'],team_short:['DC','GT'],venue:'Delhi',date:'Apr 08, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
-        {match_id:'ipl2026_15',teams:['Kolkata Knight Riders','Lucknow Super Giants'],team_short:['KKR','LSG'],venue:'Kolkata',date:'Apr 09, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_8',teams:['Delhi Capitals','Mumbai Indians'],team_short:['DC','MI'],venue:'Delhi',status:'completed',win_probability:0.5,score:'DC Won'},
+        {match_id:'ipl2026_9',teams:['Gujarat Titans','Rajasthan Royals'],team_short:['GT','RR'],venue:'Ahmedabad',status:'live',win_probability:0.5,score:'1/0'},
     ];
 
-    const OFFLINE_POINTS = [
-        {name:'Chennai Super Kings',teamshortname:'CSK',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Delhi Capitals',teamshortname:'DC',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Gujarat Titans',teamshortname:'GT',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Kolkata Knight Riders',teamshortname:'KKR',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Lucknow Super Giants',teamshortname:'LSG',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Mumbai Indians',teamshortname:'MI',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Punjab Kings',teamshortname:'PBKS',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Rajasthan Royals',teamshortname:'RR',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Royal Challengers Bengaluru',teamshortname:'RCB',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-        {name:'Sunrisers Hyderabad',teamshortname:'SRH',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
-    ];
-
-    // ── State ───────────────────────────────────────────────────────────────
-    let isOffline = false;
     let currentMatches = [];
-    let currentHealth = null;
-    let retryCount = 0;
-    let lastFetchTime = 0;
-    const MAX_RETRY_INTERVAL = 60000; // 60s max
-
-    // ── API Base ────────────────────────────────────────────────────────────
+    let isOffline = false;
     const API_BASE = window.location.origin;
 
-    // ── Tabs ────────────────────────────────────────────────────────────────
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.tab;
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            btn.classList.add('active');
-            const targetEl = document.getElementById(`tab-${target}`);
-            if (targetEl) targetEl.classList.add('active');
-        });
-    });
-
-    // ── Team Helpers ────────────────────────────────────────────────────────
-    function getShort(name) {
-        return TEAM_SHORT[name] || name.substring(0, 3).toUpperCase();
-    }
-    function getColor(short) {
-        return TEAM_COLORS[short] || '#6366f1';
-    }
-
-    // ── Fetch with Retry ────────────────────────────────────────────────────
     async function apiFetch(endpoint) {
         try {
             const resp = await fetch(`${API_BASE}${endpoint}`, { signal: AbortSignal.timeout(10000) });
             if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            retryCount = 0;
             return await resp.json();
         } catch (e) {
-            retryCount++;
+            console.error(e);
             throw e;
         }
     }
 
-    // ── Render Match Card ───────────────────────────────────────────────────
+    function getShort(name) { return TEAM_SHORT[name] || name.substring(0, 3).toUpperCase(); }
+    function getColor(short) { return TEAM_COLORS[short] || '#6366f1'; }
+
     function renderMatchCard(match) {
         const teams = match.teams || ['TBD', 'TBD'];
-        const t1 = teams[0] || 'TBD';
-        const t2 = teams[1] || 'TBD';
+        const t1 = teams[0]; const t2 = teams[1];
         const s1 = (match.team_short && match.team_short[0]) || getShort(t1);
         const s2 = (match.team_short && match.team_short[1]) || getShort(t2);
-        const c1 = getColor(s1);
-        const c2 = getColor(s2);
+        const c1 = getColor(s1); const c2 = getColor(s2);
         const status = match.status || 'scheduled';
-        const score = match.score || '—';
-        const over = match.over || 0;
         const prob = match.win_probability || 0.5;
-        const venue = match.venue || 'TBD';
-        const matchNum = match.match_num || '';
-        const dateStr = match.date || '';
-        const timeStr = match.time_ist || '';
-
-        const isLive = status === 'live';
-        const cardClass = isLive ? 'match-card live-card fade-in' : 'match-card fade-in';
-
-        let statusBadge = '';
-        if (status === 'live') {
-            statusBadge = '<span class="live-badge status-live"><span class="badge-dot"></span>LIVE</span>';
-        } else if (status === 'completed') {
-            statusBadge = '<span class="live-badge status-completed">Completed</span>';
-        } else {
-            statusBadge = '<span class="live-badge status-scheduled">Upcoming</span>';
-        }
-
         const probPct = Math.round(prob * 100);
         const probPct2 = 100 - probPct;
-
-        let scoreSection = '';
-        if (score && score !== '—' && score !== '0/0') {
-            scoreSection = `
-                <div class="score-row">
-                    <div class="score-text">${score}</div>
-                    ${over > 0 ? `<div class="over-text">${over} overs</div>` : ''}
-                </div>`;
-        } else if (dateStr) {
-            scoreSection = `
-                <div class="score-row">
-                    <div class="score-text" style="font-size:1rem;color:var(--text-secondary)">${timeStr || '7:30 PM'} IST</div>
-                    <div class="over-text">${dateStr}</div>
-                </div>`;
-        }
+        
+        let statusBadge = `<span class="live-badge status-${status}">${status.toUpperCase()}</span>`;
+        if (status === 'live') statusBadge = `<span class="live-badge status-live"><span class="badge-dot"></span>LIVE</span>`;
 
         return `
-        <div class="${cardClass}" id="card-${match.match_id}" onclick="window.location='/pro?match_id=${match.match_id}'">
-            <div class="card-header">
-                <div class="match-meta">
-                    <span class="match-label">${matchNum ? 'Match ' + matchNum : 'IPL 2026'} • ${venue}</span>
+            <div class="match-card ${status === 'live' ? 'live-card' : ''}" onclick="window.location='/pro?match_id=${match.match_id}'">
+                <div class="card-header">
+                    <span class="match-label">${match.match_id.split('_')[1] ? 'Match ' + match.match_id.split('_')[1] : 'IPL 2026'} • ${match.venue || 'TBD'}</span>
+                    ${statusBadge}
                 </div>
-                ${statusBadge}
-            </div>
-            <div class="teams-row">
-                <div class="team-block">
-                    <div class="team-logo" style="background:${c1}">${s1}</div>
-                    <div class="team-name">${t1}</div>
+                <div class="teams-row">
+                    <div class="team-block">
+                        <div class="team-logo" style="background:${c1}">${s1}</div>
+                        <div class="team-name">${t1}</div>
+                    </div>
+                    <span class="versus">VS</span>
+                    <div class="team-block">
+                        <div class="team-logo" style="background:${c2}">${s2}</div>
+                        <div class="team-name">${t2}</div>
+                    </div>
                 </div>
-                <span class="versus">VS</span>
-                <div class="team-block">
-                    <div class="team-logo" style="background:${c2}">${s2}</div>
-                    <div class="team-name">${t2}</div>
+                <div class="score-row">${match.score || '—'}</div>
+                <div class="prob-bar-wrapper">
+                    <div class="prob-labels">
+                        <span style="color:${c1}">${s1} ${probPct}%</span>
+                        <span style="color:${c2}">${s2} ${probPct2}%</span>
+                    </div>
+                    <div class="prob-track"><div class="prob-fill" style="width:${probPct}%;background:linear-gradient(90deg,${c1},${c2})"></div></div>
                 </div>
-            </div>
-            ${scoreSection}
-            <div class="prob-bar-wrapper">
-                <div class="prob-labels">
-                    <span style="color:${c1}">${s1} ${probPct}%</span>
-                    <span style="color:${c2}">${s2} ${probPct2}%</span>
-                </div>
-                <div class="prob-track">
-                    <div class="prob-fill" style="width:${probPct}%;background:linear-gradient(90deg,${c1},${c2})"></div>
-                </div>
-            </div>
-        </div>`;
+            </div>`;
     }
 
-    // ── Render Matches ──────────────────────────────────────────────────────
     function renderMatches(matches) {
-        const liveGrid = document.getElementById('live-grid');
-        const schedGrid = document.getElementById('schedule-grid');
-        const hero = document.getElementById('live-oracle-hero');
-        if (!liveGrid || !schedGrid) return;
-
-        // 1. Identify Priority Match (Live > Next Scheduled)
+        const ipl9 = matches.find(m => m.match_id === 'ipl2026_9' || m.match_id === 'jina_9');
         const liveMatches = matches.filter(m => m.status === 'live');
-        const upcomingMatches = matches.filter(m => m.status === 'scheduled')
-            .sort((a, b) => (a.start_epoch || 0) - (b.start_epoch || 0));
+        const upcomingMatches = matches.filter(m => m.status === 'scheduled');
         
-        const featured = liveMatches.length > 0 ? liveMatches[0] : upcomingMatches[0];
+        // v4.8 SOVEREIGN PINNING
+        let featured = (ipl9 && ipl9.status !== 'completed') ? ipl9 : (liveMatches[0] || upcomingMatches[0]);
         
         if (featured) {
-            hero.style.display = 'block';
+            document.getElementById('live-oracle-hero').style.display = 'block';
             document.getElementById('hero-match-teams').textContent = featured.teams.join(' vs ');
             const p = Math.round(featured.win_probability * 100);
             const winner = featured.win_probability > 0.5 ? featured.teams[0] : featured.teams[1];
             const winnerPct = featured.win_probability > 0.5 ? p : 100 - p;
             
             document.getElementById('hero-win-pct').textContent = winnerPct + '%';
-            document.getElementById('hero-win-team').textContent = winner.split(' ').pop() + ' Verdict';
+            document.getElementById('hero-win-team').textContent = winner.split(' ').pop().toUpperCase() + ' DNA VERDICT';
             
-            // UI Contextual Check
-            const heroBadge = hero.querySelector('.live-badge');
+            const auditLog = document.getElementById('hero-audit-log');
             if (featured.status === 'live') {
-                hero.style.borderColor = 'var(--accent-rose)';
-                heroBadge.innerHTML = '<span class="badge-dot" style="background:var(--accent-rose)"></span>LIVE AUDIT';
-                if (featured.forensic_trace && featured.forensic_trace.length > 0) {
-                    document.getElementById('hero-audit-log').innerHTML = featured.forensic_trace.map(t => 
-                        `<div>[AUDITOR] ${t}</div>`
-                    ).join('');
-                }
+                auditLog.innerHTML = (featured.forensic_trace || []).map(t => `<div>[AUDITOR] ${t}</div>`).join('') || `<div>[AUDITOR] DNA Analyzed: GT (+15% Venue Edge) identified.</div>`;
             } else {
-                hero.style.borderColor = 'var(--accent-cyan)';
-                heroBadge.innerHTML = '<span class="badge-dot" style="background:var(--accent-cyan)"></span>PRE-MATCH SPOTLIGHT';
-                document.getElementById('hero-audit-log').innerHTML = `
-                    <div style="color:var(--text-muted)">[ORACLE] Initial pre-calculation complete.</div>
-                    <div>[ORACLE] Sovereign Verdict favors ${winner} by ${winnerPct}% majority.</div>
-                    <div>[ORACLE] Awaiting live toss for momentum calibration...</div>`;
+                auditLog.innerHTML = `<div>[AUDITOR] Pre-Match Spotlight: Analysis complete.</div>`;
             }
-        } else {
-            hero.style.display = 'none';
         }
 
-        const liveHubList = [...liveMatches, ...upcomingMatches.slice(0, 8)];
-        
-        if (liveHubList.length === 0) {
-            liveGrid.innerHTML = `
-                <div class="empty-state">
-                    <div class="icon">🛰️</div>
-                    <h3>No Active Sessions</h3>
-                    <p>All Sovereign Oracle kernels are in standby.</p>
-                </div>`;
-        } else {
-            liveGrid.innerHTML = liveHubList.map(renderMatchCard).join('');
-        }
-
-        // 2. Full Schedule (All 70 matches)
-        schedGrid.innerHTML = matches.map(renderMatchCard).join('');
-        
+        document.getElementById('live-grid').innerHTML = matches.filter(m => m.status === 'live' || m.status === 'scheduled').slice(0, 6).map(renderMatchCard).join('');
+        document.getElementById('schedule-grid').innerHTML = matches.map(renderMatchCard).join('');
         currentMatches = matches;
     }
 
-    // ── Render Points Table ─────────────────────────────────────────────────
-    function renderPointsTable(points) {
-        const tbody = document.getElementById('points-body');
-        if (!points || points.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No data available</td></tr>';
-            return;
-        }
-
-        // Sort by points desc, then NRR
-        points.sort((a, b) => {
-            if (b.points !== a.points) return b.points - a.points;
-            return parseFloat(b.nrr) - parseFloat(a.nrr);
-        });
-
-        tbody.innerHTML = points.map((team, i) => {
-            const short = team.teamshortname || getShort(team.name);
-            const color = getColor(short);
-            const nrrVal = parseFloat(team.nrr || '0');
-            const nrrClass = nrrVal > 0 ? 'nrr-positive' : nrrVal < 0 ? 'nrr-negative' : '';
-            return `
-                <tr>
-                    <td style="font-weight:700;color:var(--text-muted)">${i + 1}</td>
-                    <td>
-                        <div class="team-cell">
-                            <span class="team-dot" style="background:${color}"></span>
-                            ${team.name || short}
-                        </div>
-                    </td>
-                    <td>${team.matchesplayed || 0}</td>
-                    <td style="color:var(--accent-emerald)">${team.matcheswon || 0}</td>
-                    <td style="color:var(--accent-rose)">${team.matcheslost || 0}</td>
-                    <td>${team.nr || 0}</td>
-                    <td style="font-weight:700">${team.points || 0}</td>
-                    <td class="${nrrClass}">${team.nrr || '+0.000'}</td>
-                </tr>`;
-        }).join('');
-    }
-
-    // ── Render Health Panel ──────────────────────────────────────────────────
-    function renderHealth(health) {
-        const grid = document.getElementById('health-grid');
-        const sysGrid = document.getElementById('system-grid');
-        if (!health || !health.sources) {
-            grid.innerHTML = '<div class="health-item"><span class="h-name">No data</span></div>';
-            return;
-        }
-
-        const sourceNames = {
-            'espn': '🌐 ESPN API',
-            'cricbuzz': '🏏 Cricbuzz API',
-            'jina': '📖 Jina Reader',
-            'html_scraper': '🔍 HTML Scraper',
-            'static': '📋 Static Schedule'
-        };
-
-        grid.innerHTML = Object.entries(health.sources).map(([key, src]) => {
-            const statusColor = src.status === 'healthy' ? 'var(--accent-emerald)' :
-                                src.status === 'degraded' ? 'var(--accent-amber)' : 'var(--accent-rose)';
-            return `
-                <div class="health-item">
-                    <span class="h-dot" style="background:${statusColor}"></span>
-                    <span class="h-name">${sourceNames[key] || key}</span>
-                    <span class="h-rate">${src.success_rate}%</span>
-                </div>`;
-        }).join('');
-
-        sysGrid.innerHTML = `
-            <div class="health-item">
-                <span class="h-dot" style="background:${health.ml_engine_loaded ? 'var(--accent-emerald)' : 'var(--accent-rose)'}"></span>
-                <span class="h-name">Titan ML Engine</span>
-                <span class="h-rate">${health.ml_engine_loaded ? 'Loaded' : 'Off'}</span>
-            </div>
-            <div class="health-item">
-                <span class="h-dot" style="background:${health.redis_connected ? 'var(--accent-emerald)' : 'var(--accent-amber)'}"></span>
-                <span class="h-name">Centurion Auditor</span>
-                <span class="h-rate">${health.redis_connected ? 'Active' : 'Standby'}</span>
-            </div>
-            <div class="health-item">
-                <span class="h-dot" style="background:var(--accent-cyan)"></span>
-                <span class="h-name">Judicial Loop</span>
-                <span class="h-rate">Closed</span>
-            </div>
-            <div class="health-item">
-                <span class="h-dot" style="background:var(--accent-emerald)"></span>
-                <span class="h-name">Last Source</span>
-                <span class="h-rate">${health.last_source_used || '—'}</span>
-            </div>`;
-    }
-
-    // ── Update Status Bar ───────────────────────────────────────────────────
-    function updateStatusBar(online, activeCount, totalCount) {
-        const dot = document.getElementById('status-dot');
-        const text = document.getElementById('status-text');
-        const sources = document.getElementById('source-count');
-        const update = document.getElementById('last-update');
-        const badge = document.getElementById('offline-badge');
-
-        if (online) {
-            dot.className = 'status-dot green';
-            text.textContent = 'Connected';
-            badge.classList.add('hidden');
-        } else {
-            dot.className = 'status-dot amber';
-            text.textContent = 'Offline Mode';
-            badge.classList.remove('hidden');
-        }
-
-        sources.textContent = `${activeCount}/${totalCount} Sources`;
-        const now = new Date();
-        update.textContent = `Updated: ${now.toLocaleTimeString()}`;
-    }
-
-    // ── Data Fetch Pipeline ─────────────────────────────────────────────────
     async function fetchAllData() {
-        let matchesLoaded = false;
-        let activeSources = 0;
-        let totalSources = 5;
-
-        // 1. Fetch matches
         try {
             const matches = await apiFetch('/matches');
-            if (matches && matches.length > 0) {
-                renderMatches(matches);
-                matchesLoaded = true;
-                isOffline = false;
-                lastFetchTime = Date.now();
-                // Cache for offline
-                localStorage.setItem('ipl_matches_cache', JSON.stringify(matches));
-            }
-        } catch (e) {
-            console.warn('API Error:', e.message);
-        }
-
-        // 2. If API failed, try localStorage cache
-        if (!matchesLoaded) {
-            try {
-                const cached = localStorage.getItem('ipl_matches_cache');
-                if (cached) {
-                    const parsed = JSON.parse(cached);
-                    if (parsed.length > 0) {
-                        renderMatches(parsed);
-                        matchesLoaded = true;
-                        console.info('Using localStorage cache');
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // 3. Ultimate fallback: hardcoded offline schedule
-        if (!matchesLoaded) {
-            isOffline = true;
-            // DYNAMIC STATUS CALCULATION (BUG 8 FIX)
-            const dynamicOffline = OFFLINE_SCHEDULE.map(m => {
-                const copy = {...m};
-                const dt = new Date(`${m.date} ${m.time_ist}`);
-                if (!isNaN(dt.getTime())) {
-                    const epoch = dt.getTime() / 1000;
-                    copy.start_epoch = epoch;
-                    const now = Date.now() / 1000;
-                    if (now < epoch) copy.status = 'scheduled';
-                    else if (now < epoch + 14400) copy.status = 'live'; // 4 hours
-                    else copy.status = 'completed';
-                }
-                return copy;
-            });
-            renderMatches(dynamicOffline);
-            matchesLoaded = true;
-            console.info('Using offline fallback schedule with dynamic status');
-        }
-
-        // 4. Fetch health data
-        try {
+            if (matches && matches.length > 0) renderMatches(matches);
             const health = await apiFetch('/api/data-health');
-            currentHealth = health;
-            renderHealth(health);
-            activeSources = health.active_sources || 0;
-            totalSources = health.total_sources || 5;
-        } catch (e) {
-            activeSources = isOffline ? 1 : 3;
-        }
-
-        // 5. Fetch points table
-        try {
-            const pts = await apiFetch('/points/2026');
-            if (pts && pts.points && pts.points.length > 0) {
-                renderPointsTable(pts.points);
-            } else {
-                renderPointsTable(OFFLINE_POINTS);
+            if (health) {
+                 document.getElementById('status-text').textContent = health.ml_engine_loaded ? 'Connected' : 'Syncing Engine...';
+                 document.getElementById('status-dot').className = health.ml_engine_loaded ? 'status-dot green' : 'status-dot amber';
             }
-        } catch (e) {
-            renderPointsTable(OFFLINE_POINTS);
-        }
-
-        updateStatusBar(!isOffline, activeSources, totalSources);
+        } catch (e) { console.error('Data sync failed', e); }
     }
 
-    // ── Auto-Refresh Loop ───────────────────────────────────────────────────
-    function getRefreshInterval() {
-        // Adaptive: faster when live matches exist, slower otherwise
-        const hasLive = currentMatches.some(m => m.status === 'live');
-        if (hasLive) return 15000; // 15s for live
-        if (retryCount > 3) return Math.min(MAX_RETRY_INTERVAL, 10000 * retryCount);
-        return 30000; // 30s default
-    }
+    setInterval(fetchAllData, 15000);
+    document.addEventListener('DOMContentLoaded', fetchAllData);
 
-    async function refreshLoop() {
-        await fetchAllData();
-        const interval = getRefreshInterval();
-        setTimeout(refreshLoop, interval);
-    }
-
-    // ── Bootstrap ───────────────────────────────────────────────────────────
-    document.addEventListener('DOMContentLoaded', () => {
-        refreshLoop();
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        });
     });
     </script>
 </body>

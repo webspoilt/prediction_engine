@@ -791,32 +791,46 @@
         const hero = document.getElementById('live-oracle-hero');
         if (!liveGrid || !schedGrid) return;
 
-        // 1. Live Hub (Live matches + up to 8 upcoming)
+        // 1. Identify Priority Match (Live > Next Scheduled)
         const liveMatches = matches.filter(m => m.status === 'live');
+        const upcomingMatches = matches.filter(m => m.status === 'scheduled')
+            .sort((a, b) => (a.start_epoch || 0) - (b.start_epoch || 0));
         
-        // --- v4.5 Hero Logic ---
-        if (liveMatches.length > 0) {
-            const featured = liveMatches[0];
+        const featured = liveMatches.length > 0 ? liveMatches[0] : upcomingMatches[0];
+        
+        if (featured) {
             hero.style.display = 'block';
             document.getElementById('hero-match-teams').textContent = featured.teams.join(' vs ');
             const p = Math.round(featured.win_probability * 100);
             const winner = featured.win_probability > 0.5 ? featured.teams[0] : featured.teams[1];
-            const winnerPct = featured.win_probability > 100 ? 100 : (featured.win_probability > 0.5 ? p : 100 - p);
+            const winnerPct = featured.win_probability > 0.5 ? p : 100 - p;
             
             document.getElementById('hero-win-pct').textContent = winnerPct + '%';
             document.getElementById('hero-win-team').textContent = winner.split(' ').pop() + ' Verdict';
             
-            if (featured.forensic_trace && featured.forensic_trace.length > 0) {
-                document.getElementById('hero-audit-log').innerHTML = featured.forensic_trace.map(t => 
-                    `<div>[AUDITOR] ${t}</div>`
-                ).join('');
+            // UI Contextual Check
+            const heroBadge = hero.querySelector('.live-badge');
+            if (featured.status === 'live') {
+                hero.style.borderColor = 'var(--accent-rose)';
+                heroBadge.innerHTML = '<span class="badge-dot" style="background:var(--accent-rose)"></span>LIVE AUDIT';
+                if (featured.forensic_trace && featured.forensic_trace.length > 0) {
+                    document.getElementById('hero-audit-log').innerHTML = featured.forensic_trace.map(t => 
+                        `<div>[AUDITOR] ${t}</div>`
+                    ).join('');
+                }
+            } else {
+                hero.style.borderColor = 'var(--accent-cyan)';
+                heroBadge.innerHTML = '<span class="badge-dot" style="background:var(--accent-cyan)"></span>PRE-MATCH SPOTLIGHT';
+                document.getElementById('hero-audit-log').innerHTML = `
+                    <div style="color:var(--text-muted)">[ORACLE] Initial pre-calculation complete.</div>
+                    <div>[ORACLE] Sovereign Verdict favors ${winner} by ${winnerPct}% majority.</div>
+                    <div>[ORACLE] Awaiting live toss for momentum calibration...</div>`;
             }
         } else {
             hero.style.display = 'none';
         }
 
-        const upcomingMatches = matches.filter(m => m.status === 'scheduled').slice(0, 8);
-        const liveHubList = [...liveMatches, ...upcomingMatches];
+        const liveHubList = [...liveMatches, ...upcomingMatches.slice(0, 8)];
         
         if (liveHubList.length === 0) {
             liveGrid.innerHTML = `

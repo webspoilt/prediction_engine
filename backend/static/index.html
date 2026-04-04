@@ -459,71 +459,42 @@
 </head>
 <body>
 
-    <!-- ═══ Status Bar ═══ -->
-    <div id="status-bar">
-        <div class="status-item">
-            <span class="status-dot green" id="status-dot"></span>
-            <span id="status-text">Connecting...</span>
+    <!-- ═══ Header ═══ -->
+    <div class="header">
+        <div class="logo">
+            <i class="fas fa-bolt"></i>
         </div>
-        <div class="status-item">
-            <span id="source-count">—/5 Sources</span>
+        <div class="brand">
+            <h1>IPL Predictor</h1>
+            <p>ML-Powered Betting Analytics</p>
         </div>
-        <div class="status-item">
-            <span id="last-update">Last update: —</span>
+        <div class="engine-status" id="engine-status-badge">
+            <span class="status-dot green"></span>
+            <span>ENGINE ACTIVE</span>
         </div>
-        <div id="offline-badge" class="status-offline-badge hidden">OFFLINE MODE</div>
+        <span class="version-badge">Titan v4.4 — Sovereign Hub</span>
+    </div>
+
+    <!-- ═══ Tab Navigation ═══ -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="live"><i class="fas fa-satellite"></i> Live Hub</button>
+        <button class="tab-btn" data-tab="schedule"><i class="fas fa-calendar-alt"></i> Full Schedule</button>
+        <button class="tab-btn" data-tab="points"><i class="fas fa-list-ol"></i> Points Table</button>
+        <button class="tab-btn" data-tab="health"><i class="fas fa-shield-halved"></i> Sovereign Health</button>
     </div>
 
     <div class="app-container">
 
-        <!-- ═══ Header ═══ -->
-        <div class="header">
-            <h1>IPL 2026 Prediction Engine</h1>
-            <p>Real-time win probability • Multi-source data pipeline • AI-powered insights</p>
-            <span class="version-badge">v3.0 — Never Empty Architecture</span>
-        </div>
-
-        <!-- ═══ Tabs ═══ -->
-        <nav class="tab-nav" id="tab-nav">
-            <button class="tab-btn active" data-tab="matches" id="tab-matches-btn">Live & Upcoming</button>
-            <button class="tab-btn" data-tab="points" id="tab-points-btn">Points Table</button>
-            <button class="tab-btn" data-tab="health" id="tab-health-btn">Data Sources</button>
-        </nav>
-
-        <!-- ═══ Tab: Matches ═══ -->
-        <div class="tab-content active" id="tab-matches">
-            <div class="match-grid" id="matches-grid">
-                <!-- Skeleton loaders (shown during initial fetch) -->
-                <div class="skeleton-card" id="skel-1">
-                    <div class="shimmer shimmer-line w60"></div>
-                    <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
-                        <div class="shimmer shimmer-circle"></div>
-                        <div class="shimmer shimmer-circle"></div>
-                    </div>
-                    <div class="shimmer shimmer-line w80"></div>
-                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
-                </div>
-                <div class="skeleton-card" id="skel-2">
-                    <div class="shimmer shimmer-line w60"></div>
-                    <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
-                        <div class="shimmer shimmer-circle"></div>
-                        <div class="shimmer shimmer-circle"></div>
-                    </div>
-                    <div class="shimmer shimmer-line w80"></div>
-                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
-                </div>
         <!-- ═══ Tab: Live Matches ═══ -->
         <div class="tab-content active" id="tab-live">
             <div class="match-grid" id="live-grid">
-                <!-- Populated by JS -->
-                <div class="skeleton-card" id="skel-1">
+                <!-- Skeleton loaders -->
+                <div class="skeleton-card">
                     <div class="shimmer shimmer-line w60"></div>
                     <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
                         <div class="shimmer shimmer-circle"></div>
                         <div class="shimmer shimmer-circle"></div>
                     </div>
-                    <div class="shimmer shimmer-line w80"></div>
-                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
                 </div>
             </div>
         </div>
@@ -531,44 +502,25 @@
         <!-- ═══ Tab: Full Schedule ═══ -->
         <div class="tab-content" id="tab-schedule">
             <div class="match-grid" id="schedule-grid">
-                <!-- Populated by JS -->
-                <div class="empty-state">
-                    <div class="icon">📅</div>
-                    <h3>Loading 2026 Timetable...</h3>
-                    <p>Fetching 70 matches from the Sovereign Oracle.</p>
-                </div>
+                <div class="empty-state"><h3>Loading 2026 Timetable...</h3></div>
             </div>
         </div>
 
         <!-- ═══ Tab: Points Table ═══ -->
         <div class="tab-content" id="tab-points">
             <div class="points-table-wrap">
-                <table class="points-table" id="points-table">
+                <table class="points-table">
                     <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Team</th>
-                            <th>P</th>
-                            <th>W</th>
-                            <th>L</th>
-                            <th>NR</th>
-                            <th>Pts</th>
-                            <th>NRR</th>
-                        </tr>
+                        <tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>L</th><th>NR</th><th>Pts</th><th>NRR</th></tr>
                     </thead>
                     <tbody id="points-body"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- ═══ Tab: Data Sources Health ═══ -->
+        <!-- ═══ Tab: Sovereign Health ═══ -->
         <div class="tab-content" id="tab-health">
             <div class="health-panel">
-                <h3>⚡ Data Pipeline Status</h3>
-                <div class="health-grid" id="health-grid">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
             <div class="health-panel">
                 <h3>📊 System Components</h3>
                 <div class="health-grid" id="system-grid">
@@ -647,10 +599,12 @@
     // ── Tabs ────────────────────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
+            const target = btn.dataset.tab;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            const targetEl = document.getElementById(`tab-${target}`);
+            if (targetEl) targetEl.classList.add('active');
         });
     });
 
@@ -755,31 +709,31 @@
         </div>`;
     }
 
-    // ── Render Matches Grid ─────────────────────────────────────────────────
+    // ── Render Matches ──────────────────────────────────────────────────────
     function renderMatches(matches) {
-        const grid = document.getElementById('matches-grid');
-        if (!matches || matches.length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state" style="grid-column:1/-1">
-                    <div class="icon">🏏</div>
-                    <h3>No Matches Found</h3>
-                    <p>Check back later for upcoming IPL 2026 matches.</p>
+        const liveGrid = document.getElementById('live-grid');
+        const schedGrid = document.getElementById('schedule-grid');
+        if (!liveGrid || !schedGrid) return;
+
+        // 1. Live Hub (Live matches + up to 8 upcoming)
+        const liveMatches = matches.filter(m => m.status === 'live');
+        const upcomingMatches = matches.filter(m => m.status === 'scheduled').slice(0, 8);
+        const liveHubList = [...liveMatches, ...upcomingMatches];
+        
+        if (liveHubList.length === 0) {
+            liveGrid.innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🛰️</div>
+                    <h3>No Active Sessions</h3>
+                    <p>All Sovereign Oracle kernels are in standby.</p>
                 </div>`;
-            return;
+        } else {
+            liveGrid.innerHTML = liveHubList.map(renderMatchCard).join('');
         }
 
-        // Sort: live first, then by match_num/date, completed last
-        matches.sort((a, b) => {
-            const order = { live: 0, scheduled: 1, completed: 2 };
-            const sa = order[a.status] ?? 1;
-            const sb = order[b.status] ?? 1;
-            if (sa !== sb) return sa - sb;
-            return (a.start_epoch || 0) - (b.start_epoch || 0);
-        });
-
-        // Show first 20 matches max to keep UI snappy
-        const visible = matches.slice(0, 20);
-        grid.innerHTML = visible.map(renderMatchCard).join('');
+        // 2. Full Schedule (All 70 matches)
+        schedGrid.innerHTML = matches.map(renderMatchCard).join('');
+        
         currentMatches = matches;
     }
 
@@ -909,11 +863,11 @@
                 matchesLoaded = true;
                 isOffline = false;
                 lastFetchTime = Date.now();
-                // Cache in localStorage for offline
-                try { localStorage.setItem('ipl_matches_cache', JSON.stringify(matches)); } catch(e) {}
+                // Cache for offline
+                localStorage.setItem('ipl_matches_cache', JSON.stringify(matches));
             }
         } catch (e) {
-            console.warn('Matches API failed:', e.message);
+            console.warn('API Error:', e.message);
         }
 
         // 2. If API failed, try localStorage cache

@@ -350,11 +350,17 @@ async def run_discovery_loop(app: FastAPI):
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/")
+async def serve_dashboard():
+    """Elite Titan Hub — Sovereign UI Dashboard."""
+    return FileResponse("backend/static/index.html")
+
+
+@app.get("/health_status")
 async def health_status():
     """Liveness check for HF Space."""
     return {
         "status": "Sovereign Oracle: ACTIVE",
-        "version": "4.3-sovereign",
+        "version": "4.4-sovereign",
         "auditor": "Centurion-01: Healthy",
         "engine": "Titan-v4-Ensemble: Ready"
     }

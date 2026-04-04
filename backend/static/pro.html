@@ -105,11 +105,24 @@
         .live-dot { width: 8px; height: 8px; background: var(--accent-rose); border-radius: 50%; box-shadow: 0 0 10px var(--accent-rose); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(2); opacity: 0; } 100% { transform: scale(0.9); opacity: 0; } }
 
-        .loading-overlay { position: fixed; inset: 0; background: var(--bg-deep); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; transition: opacity 0.5s; }
-        .titan-loader { width: 60px; height: 60px; border: 4px solid var(--border); border-top-color: var(--accent-titan); border-radius: 50%; animation: spin 1s infinite linear; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
         .hidden { opacity: 0; pointer-events: none; }
+
+        /* ── Sovereign Audit Log ── */
+        .audit-log-card { background: rgba(0,0,0,0.4); border: 1px solid rgba(99, 102, 241, 0.2); margin-top: 24px; padding: 20px; border-radius: var(--radius); }
+        .audit-console { 
+            font-family: 'JetBrains Mono', monospace; font-size: 11px; height: 120px; overflow-y: auto; 
+            padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);
+            display: flex; flex-direction: column; gap: 6px; scroll-behavior: smooth;
+        }
+        .audit-console::-webkit-scrollbar { width: 4px; }
+        .audit-console::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .audit-line { color: var(--text-dim); line-height: 1.4; border-left: 2px solid transparent; padding-left: 10px; transition: all 0.3s; }
+        .audit-line.new { border-left-color: var(--accent-titan); color: var(--text-main); animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn { from { transform: translateX(-10px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .audit-tag { font-weight: 700; margin-right: 8px; }
+        .tag-auditor { color: var(--accent-amber); }
+        .tag-judge { color: var(--accent-titan); }
+        .tag-sovereign { color: var(--accent-emerald); filter: drop-shadow(0 0 5px var(--accent-emerald)); }
     </style>
 </head>
 <body>
@@ -176,7 +189,15 @@
 
                 <div class="card" style="background: rgba(99, 102, 241, 0.03);">
                     <div class="card-title"><i class="fas fa-info-circle"></i> TITAN ENGINE STATUS</div>
-                    <p id="engine-status" style="font-size: 12px; line-height: 1.6;">v4.0 Hybrid architecture active. Running Bayesian Monte Carlo simulations (n=5000) for projected outcomes.</p>
+                    <p id="engine-status" style="font-size: 12px; line-height: 1.6;">v4.3 Sovereign Oracle active. Forensic system auditing causal loops for equilibrium restoration.</p>
+                </div>
+
+                <div class="audit-log-card">
+                    <div class="card-title" style="font-size: 0.7rem;"><i class="fas fa-gavel"></i> SOVEREIGN AUDIT LOG</div>
+                    <div id="audit-console" class="audit-console">
+                        <div class="audit-line">[SYSTEM] Initializing Sovereign Circuit...</div>
+                        <div class="audit-line">[SYSTEM] Awaiting judicial consensus from kernels...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -248,15 +269,45 @@
             // 3. Consensus Gauge
             if (data.ensemble_agreement) {
                 const agreement = data.ensemble_agreement * 100;
+                const gauge = document.getElementById('consensus-gauge');
+                const circumference = 2 * Math.PI * 40;
+                const offset = circumference - (circumference * agreement / 100);
+                gauge.style.strokeDashoffset = offset;
                 document.getElementById('consensus-val').textContent = `${agreement.toFixed(0)}%`;
-                const offset = 251.2 - (251.2 * (agreement / 100));
-                document.getElementById('consensus-gauge').style.strokeDashoffset = offset;
                 
                 const gaugeColor = agreement > 80 ? 'var(--accent-emerald)' : agreement > 50 ? 'var(--accent-titan)' : 'var(--accent-amber)';
                 document.getElementById('consensus-gauge').style.stroke = gaugeColor;
             }
 
-            // 4. Confidence Interval
+            // 4. Forensic Trace
+            if (data.forensic_trace && data.forensic_trace.length > 0) {
+                const console = document.getElementById('audit-console');
+                data.forensic_trace.forEach(msg => {
+                    const existing = Array.from(console.children).some(c => c.textContent.includes(msg));
+                    if (!existing) {
+                        const line = document.createElement('div');
+                        line.className = 'audit-line new';
+                        
+                        // Parse tags for styling
+                        let styledMsg = msg;
+                        if (msg.includes('[AUDITOR]')) styledMsg = msg.replace('[AUDITOR]', '<span class="audit-tag tag-auditor">[AUDITOR]</span>');
+                        if (msg.includes('[JUDGE]')) styledMsg = msg.replace('[JUDGE]', '<span class="audit-tag tag-judge">[JUDGE]</span>');
+                        if (msg.includes('[SOVEREIGN]')) styledMsg = msg.replace('[SOVEREIGN]', '<span class="audit-tag tag-sovereign">[SOVEREIGN]</span>');
+                        
+                        line.innerHTML = styledMsg;
+                        console.appendChild(line);
+                        console.scrollTop = console.scrollHeight;
+                        
+                        // Remove "new" class after animation
+                        setTimeout(() => line.classList.remove('new'), 2000);
+                        
+                        // Cap history
+                        if (console.children.length > 50) console.removeChild(console.children[0]);
+                    }
+                });
+            }
+
+            // 5. Confidence Interval
             if (data.confidence_interval) {
                 const min = (data.confidence_interval[0] * 100).toFixed(0);
                 const max = (data.confidence_interval[1] * 100).toFixed(0);

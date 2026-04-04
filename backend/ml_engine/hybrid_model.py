@@ -28,7 +28,10 @@ from scipy.stats import entropy
 import pickle
 import json
 import logging
-from typing import Dict, List, Tuple, Optional
+import os
+import psutil # Added for v4.0 Titan
+import time
+from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import redis
 import time
@@ -839,6 +842,10 @@ class HybridEnsemble:
         interval_min = max(0.01, final_mean - (1.96 * total_std))
         interval_max = min(0.99, final_mean + (1.96 * total_std))
         
+        # ── Titan 4.3: Sovereign Oracle (Forensic Trace) ─────────────────────
+        auditor = HeuristicAuditor()
+        forensic_trace = auditor.audit(final_mean, static_prob, lstm_mean, raw_context)
+        
         # ── Titan 4.0 Features: SHAP & Agreement ─────────────────────────────
         shap_factors = self.get_shap_factors(static_prob, lstm_mean, tx_mean, raw_context)
         agreement = 1.0 - abs(static_prob - lstm_mean) # Consensus metric
@@ -849,8 +856,43 @@ class HybridEnsemble:
             "ensemble_agreement": float(agreement),
             "confidence_interval": [float(interval_min), float(interval_max)],
             "uncertainty": float(total_std),
-            "status": "TITAN_ELITE_PREDICTION"
+            "forensic_trace": forensic_trace,
+            "status": "SOVEREIGN_SYSTEM_AUDIT"
         }
+
+class HeuristicAuditor:
+    """Titan v4.3 Sovereign Oracle - Logic Kernels for forensic explainability."""
+    
+    def audit(self, prob: float, p_static: float, p_lstm: float, context: Optional[Dict]) -> List[str]:
+        trace = []
+        now = time.time()
+        
+        # 1. Equilibrium Lock (Based on deep model disagreement)
+        if abs(p_static - p_lstm) > 0.3:
+            trace.append("[AUDITOR] Equilibrium Lock detected: Significant divergence between Static History and Live Momentum.")
+        
+        # 2. Momentum Pulse (Based on CRR)
+        if context:
+            crr = context.get('crr', 0)
+            if crr > 9.5:
+                trace.append("[JUDGE] Momentum Pulse: High scoring intensity creating a Mathematical Necessity for win pressure.")
+            elif crr < 6.0 and context.get('over', 0) > 5:
+                trace.append("[JUDGE] Scoring Equilibrium: Low intensity suggests a defensive pivot is required.")
+                
+            # 3. Wicket Pressure
+            wickets = context.get('total_wickets', 0)
+            if wickets > 4 and context.get('over', 0) < 10:
+                trace.append("[AUDITOR] Structural Fragility: Early wicket loss has compromised the original DNA of the innings.")
+                
+        # 4. Final Verdict based on prob
+        if prob > 0.8:
+            trace.append("[SOVEREIGN] Verdict: 80%+ Probability indicates a Causal Loop closure favoring the batting side.")
+        elif prob < 0.2:
+            trace.append("[SOVEREIGN] Verdict: Extreme deviation suggests a critical restoration of equilibrium is unlikely.")
+        else:
+            trace.append("[JUDGE] Verdict: The system remains in a Multi-State superposition. Dynamic entry suggested.")
+            
+        return trace
 
     def get_shap_factors(self, p1: float, p2: float, p3: float, context: Optional[Dict]) -> List[Dict]:
         """

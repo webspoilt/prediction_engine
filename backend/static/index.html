@@ -512,7 +512,11 @@
                     <div class="shimmer shimmer-line w80"></div>
                     <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
                 </div>
-                <div class="skeleton-card" id="skel-3">
+        <!-- ═══ Tab: Live Matches ═══ -->
+        <div class="tab-content active" id="tab-live">
+            <div class="match-grid" id="live-grid">
+                <!-- Populated by JS -->
+                <div class="skeleton-card" id="skel-1">
                     <div class="shimmer shimmer-line w60"></div>
                     <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
                         <div class="shimmer shimmer-circle"></div>
@@ -520,6 +524,18 @@
                     </div>
                     <div class="shimmer shimmer-line w80"></div>
                     <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Full Schedule ═══ -->
+        <div class="tab-content" id="tab-schedule">
+            <div class="match-grid" id="schedule-grid">
+                <!-- Populated by JS -->
+                <div class="empty-state">
+                    <div class="icon">📅</div>
+                    <h3>Loading 2026 Timetable...</h3>
+                    <p>Fetching 70 matches from the Sovereign Oracle.</p>
                 </div>
             </div>
         </div>
@@ -836,21 +852,21 @@
         sysGrid.innerHTML = `
             <div class="health-item">
                 <span class="h-dot" style="background:${health.ml_engine_loaded ? 'var(--accent-emerald)' : 'var(--accent-rose)'}"></span>
-                <span class="h-name">ML Engine</span>
+                <span class="h-name">Titan ML Engine</span>
                 <span class="h-rate">${health.ml_engine_loaded ? 'Loaded' : 'Off'}</span>
             </div>
             <div class="health-item">
                 <span class="h-dot" style="background:${health.redis_connected ? 'var(--accent-emerald)' : 'var(--accent-amber)'}"></span>
-                <span class="h-name">Redis</span>
-                <span class="h-rate">${health.redis_connected ? 'Connected' : 'Memory-only'}</span>
-            </div>
-            <div class="health-item">
-                <span class="h-dot" style="background:var(--accent-emerald)"></span>
-                <span class="h-name">Cache</span>
-                <span class="h-rate">${health.cache_size || 0} entries</span>
+                <span class="h-name">Centurion Auditor</span>
+                <span class="h-rate">${health.redis_connected ? 'Active' : 'Standby'}</span>
             </div>
             <div class="health-item">
                 <span class="h-dot" style="background:var(--accent-cyan)"></span>
+                <span class="h-name">Judicial Loop</span>
+                <span class="h-rate">Closed</span>
+            </div>
+            <div class="health-item">
+                <span class="h-dot" style="background:var(--accent-emerald)"></span>
                 <span class="h-name">Last Source</span>
                 <span class="h-rate">${health.last_source_used || '—'}</span>
             </div>`;

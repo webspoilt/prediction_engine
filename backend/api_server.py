@@ -457,17 +457,28 @@ async def list_matches():
         except Exception as e:
             logger.warning(f"Redis merge (non-critical): {e}")
 
-    # Enrich with ML predictions
+    # Enrich with ML predictions (Titan v4.5 — Real-time Enrichment)
     if predictor:
         for m in matches:
-            if m.get("win_probability") == 0.5 and len(m.get("teams", [])) == 2:
-                try:
+            # Skip if we already have a specialized probability or if it's not a full match
+            if len(m.get("teams", [])) != 2: continue
+            
+            try:
+                if m.get("status") == "live":
+                    # LIVE PREDICTION: Call the full hybrid ensemble
+                    pred = predictor.model.predict_live_match(
+                        m["match_id"], m["teams"][0], m["teams"][1], m.get("venue", "Unknown")
+                    )
+                    m["win_probability"] = float(pred.get("win_probability", 0.5))
+                    m["forensic_trace"] = pred.get("forensic_trace", [])
+                elif m.get("win_probability") == 0.5:
+                    # PRE-MATCH: Call the static ensemble
                     pred = predictor.model.predict_pre_match(
                         m["teams"][0], m["teams"][1], m.get("venue", "Unknown")
                     )
                     m["win_probability"] = float(pred.get("win_probability", 0.5))
-                except Exception:
-                    pass
+            except Exception as e:
+                logger.warning(f"Enrichment failed for {m.get('match_id')}: {e}")
 
     return matches
 

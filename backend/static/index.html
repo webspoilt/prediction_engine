@@ -455,6 +455,61 @@
             70% { transform: scale(2); opacity: 0; }
             100% { transform: scale(0.9); opacity: 0; }
         }
+
+        /* ── Live Oracle Hero Section ── */
+        .live-oracle-hero {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 30px; margin-bottom: 30px;
+            position: relative; overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            display: none; /* Shown only when a match is live */
+        }
+        .hero-glow {
+            position: absolute; top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-layout {
+            display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px;
+            position: relative; z-index: 1;
+        }
+        .oracle-verdict {
+            text-align: center; border-right: 1px solid var(--border-glass);
+            padding-right: 40px;
+        }
+        .oracle-gauge {
+            width: 140px; height: 140px; margin: 0 auto 20px;
+            position: relative; display: flex; align-items: center; justify-content: center;
+        }
+        .oracle-pct {
+            font-size: 32px; font-weight: 800; color: var(--text-primary);
+            font-family: var(--font-mono);
+        }
+        .oracle-label {
+            font-size: 14px; font-weight: 600; color: var(--accent-cyan);
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .forensic-trace-hero {
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius-md);
+            padding: 15px; height: 180px; overflow-y: auto;
+            font-family: var(--font-mono); font-size: 11px;
+            color: var(--accent-emerald); line-height: 1.6;
+        }
+        .hero-match-meta {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; border-bottom: 1px solid var(--border-glass);
+            padding-bottom: 10px;
+        }
+        .hero-teams { font-size: 20px; font-weight: 700; }
+        
+        @media (max-width: 768px) {
+            .hero-layout { grid-template-columns: 1fr; gap: 20px; }
+            .oracle-verdict { border-right: none; border-bottom: 1px solid var(--border-glass); padding: 0 0 20px 0; }
+        }
     </style>
 </head>
 <body>
@@ -487,6 +542,26 @@
 
         <!-- ═══ Tab: Live Matches ═══ -->
         <div class="tab-content active" id="tab-live">
+            <!-- Live Oracle Hero Section (v4.5) -->
+            <div id="live-oracle-hero" class="live-oracle-hero fade-in">
+                <div class="hero-glow"></div>
+                <div class="hero-match-meta">
+                    <div id="hero-match-teams" class="hero-teams">Fetching live matchup...</div>
+                    <div class="live-badge"><span class="badge-dot"></span>LIVE AUDIT</div>
+                </div>
+                <div class="hero-layout">
+                    <div class="oracle-verdict">
+                        <div class="oracle-gauge">
+                            <div id="hero-win-pct" class="oracle-pct">0%</div>
+                        </div>
+                        <div class="oracle-label" id="hero-win-team">Evaluating...</div>
+                    </div>
+                    <div class="forensic-trace-hero" id="hero-audit-log">
+                        [AUDITOR] Awaiting live data packet...
+                    </div>
+                </div>
+            </div>
+
             <div class="match-grid" id="live-grid">
                 <!-- Skeleton loaders -->
                 <div class="skeleton-card">
@@ -713,10 +788,33 @@
     function renderMatches(matches) {
         const liveGrid = document.getElementById('live-grid');
         const schedGrid = document.getElementById('schedule-grid');
+        const hero = document.getElementById('live-oracle-hero');
         if (!liveGrid || !schedGrid) return;
 
         // 1. Live Hub (Live matches + up to 8 upcoming)
         const liveMatches = matches.filter(m => m.status === 'live');
+        
+        // --- v4.5 Hero Logic ---
+        if (liveMatches.length > 0) {
+            const featured = liveMatches[0];
+            hero.style.display = 'block';
+            document.getElementById('hero-match-teams').textContent = featured.teams.join(' vs ');
+            const p = Math.round(featured.win_probability * 100);
+            const winner = featured.win_probability > 0.5 ? featured.teams[0] : featured.teams[1];
+            const winnerPct = featured.win_probability > 100 ? 100 : (featured.win_probability > 0.5 ? p : 100 - p);
+            
+            document.getElementById('hero-win-pct').textContent = winnerPct + '%';
+            document.getElementById('hero-win-team').textContent = winner.split(' ').pop() + ' Verdict';
+            
+            if (featured.forensic_trace && featured.forensic_trace.length > 0) {
+                document.getElementById('hero-audit-log').innerHTML = featured.forensic_trace.map(t => 
+                    `<div>[AUDITOR] ${t}</div>`
+                ).join('');
+            }
+        } else {
+            hero.style.display = 'none';
+        }
+
         const upcomingMatches = matches.filter(m => m.status === 'scheduled').slice(0, 8);
         const liveHubList = [...liveMatches, ...upcomingMatches];
         

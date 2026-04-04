@@ -3,489 +3,955 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPL Prediction Engine | Live Betting Analytics</title>
-    <meta name="description" content="Professional IPL match prediction engine with real-time betting odds, prop bets, and ML-powered analytics.">
+    <title>IPL 2026 — Prediction Engine</title>
+    <meta name="description" content="Real-time IPL 2026 match predictions with multi-source data pipeline and AI-powered win probability. Never empty, always live.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        /* ═══════════════════════════════════════════════════════════════════════
+           CSS Design System — Dark Glassmorphism
+           ═══════════════════════════════════════════════════════════════════ */
 
         :root {
             --bg-primary: #0a0e1a;
-            --bg-secondary: #0f1629;
-            --bg-card: rgba(15, 22, 41, 0.85);
-            --bg-elevated: rgba(25, 35, 60, 0.7);
-            --border: rgba(99, 115, 171, 0.15);
-            --border-active: rgba(99, 115, 171, 0.35);
-            --border-color: rgba(99, 115, 171, 0.2);
-            --text-primary: #f0f4ff;
-            --text-secondary: #8892b0;
-            --text-muted: #5a6480;
-            --accent-blue: #3b82f6;
-            --accent-cyan: #06b6d4;
-            --accent-green: #10b981;
-            --accent-red: #ef4444;
+            --bg-secondary: #111827;
+            --bg-card: rgba(17, 24, 39, 0.7);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border-glass: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(99, 102, 241, 0.3);
+
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+
+            --accent-indigo: #6366f1;
+            --accent-violet: #8b5cf6;
+            --accent-cyan: #22d3ee;
+            --accent-emerald: #10b981;
             --accent-amber: #f59e0b;
-            --accent-purple: #8b5cf6;
-            --accent-pink: #ec4899;
-            --gradient-primary: linear-gradient(135deg, #3b82f6, #06b6d4);
+            --accent-rose: #f43f5e;
+
+            --gradient-primary: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a78bfa 100%);
+            --gradient-card: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.04) 100%);
+            --gradient-live: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            --gradient-bg: radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.08) 0%, transparent 50%),
+                           radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                           radial-gradient(ellipse at 50% 80%, rgba(34,211,238,0.04) 0%, transparent 50%);
+
+            --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --radius-xl: 20px;
+
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: var(--bg-primary);
+            font-family: var(--font-main);
+            background-color: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        .plotly-gauge-container {
-            width: 100%;
-            height: 250px;
-            margin: 0 auto;
-            position: relative;
-        }
-
         body::before {
             content: '';
             position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 20% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 80%, rgba(6,182,212,0.04) 0%, transparent 50%),
-                        radial-gradient(circle at 50% 50%, rgba(139,92,246,0.03) 0%, transparent 50%);
-            animation: bgFloat 20s ease-in-out infinite;
-            z-index: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: var(--gradient-bg);
+            z-index: -1;
             pointer-events: none;
         }
 
-        @keyframes bgFloat {
-            0%, 100% { transform: translate(0, 0) rotate(0deg); }
-            33% { transform: translate(2%, 1%) rotate(1deg); }
-            66% { transform: translate(-1%, 2%) rotate(-1deg); }
-        }
-
-        .app { position: relative; z-index: 1; max-width: 1440px; margin: 0 auto; padding: 16px; }
-
-        .card {
-            background: var(--bg-card);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-xl);
-            padding: 24px;
-        }
-
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 20px 28px; }
-        .logo { display: flex; align-items: center; gap: 14px; }
-        .logo-icon { width: 48px; height: 48px; background: var(--gradient-primary); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
-        .status-badge { padding: 6px 14px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: var(--accent-green); }
-        
-        .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--bg-secondary); border-radius: var(--radius-lg); padding: 4px; }
-        .tab-btn { padding: 10px 20px; border: none; background: transparent; color: var(--text-secondary); font-size: 13px; font-weight: 600; cursor: pointer; border-radius: var(--radius-md); }
-        .tab-btn.active { background: var(--accent-blue); color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        .grid-main { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
-        
+        /* ── Scrollbar ── */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: var(--accent-indigo); border-radius: 3px; }
+
+        /* ── Status Bar ── */
+        #status-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 24px; height: 40px;
+            background: rgba(10, 14, 26, 0.92);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-glass);
+            font-size: 12px; color: var(--text-secondary);
+            font-family: var(--font-mono);
+        }
+        .status-item { display: flex; align-items: center; gap: 6px; }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+        .status-dot.green { background: var(--accent-emerald); box-shadow: 0 0 6px var(--accent-emerald); }
+        .status-dot.amber { background: var(--accent-amber); box-shadow: 0 0 6px var(--accent-amber); }
+        .status-dot.red { background: var(--accent-rose); box-shadow: 0 0 6px var(--accent-rose); }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .status-offline-badge {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--accent-rose);
+            padding: 2px 10px; border-radius: 10px;
+            font-weight: 600; font-size: 11px;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        /* ── Layout ── */
+        .app-container {
+            max-width: 1400px; margin: 0 auto;
+            padding: 56px 24px 40px;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center; padding: 32px 0 24px;
+        }
+        .header h1 {
+            font-size: 2.4rem; font-weight: 900;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em; line-height: 1.1;
+        }
+        .header p {
+            color: var(--text-secondary); font-size: 0.95rem;
+            margin-top: 8px; font-weight: 400;
+        }
+        .header .version-badge {
+            display: inline-block; margin-top: 10px;
+            padding: 3px 12px; border-radius: 20px;
+            background: var(--gradient-card);
+            border: 1px solid var(--border-glass);
+            font-size: 11px; color: var(--accent-cyan);
+            font-family: var(--font-mono); font-weight: 500;
+        }
+
+        /* ── Tab Navigation ── */
+        .tab-nav {
+            display: flex; gap: 4px; margin: 0 0 24px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            width: fit-content;
+        }
+        .tab-btn {
+            background: transparent; border: none; color: var(--text-secondary);
+            padding: 8px 20px; border-radius: var(--radius-sm);
+            font-family: var(--font-main); font-size: 13px; font-weight: 500;
+            cursor: pointer; transition: all 0.25s ease;
+        }
+        .tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.04); }
+        .tab-btn.active {
+            background: var(--accent-indigo); color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+        }
+
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Grid ── */
+        .match-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 16px;
+        }
+
+        /* ── Match Card ── */
+        .match-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative; overflow: hidden;
+        }
+        .match-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--gradient-primary);
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .match-card:hover {
+            border-color: var(--border-glow);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-2px);
+        }
+        .match-card:hover::before { opacity: 1; }
+
+        .match-card.live-card {
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .match-card.live-card::before {
+            background: var(--gradient-live); opacity: 1;
+            height: 3px;
+        }
+
+        .card-header {
+            display: flex; justify-content: space-between;
+            align-items: flex-start; margin-bottom: 16px;
+        }
+        .match-meta {
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .match-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            color: var(--text-muted); letter-spacing: 0.08em;
+        }
+        .match-venue {
+            font-size: 12px; color: var(--text-secondary);
+        }
+        .match-date {
+            font-size: 11px; color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .live-badge {
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .live-badge.status-live {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--accent-emerald);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .live-badge.status-live .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--accent-emerald);
+            animation: pulse-dot 1.5s infinite;
+        }
+        .live-badge.status-scheduled {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--accent-indigo);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+        }
+        .live-badge.status-completed {
+            background: rgba(100, 116, 139, 0.12);
+            color: var(--text-muted);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+
+        .teams-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 12px; margin-bottom: 14px;
+        }
+        .team-block {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 6px; flex: 1; min-width: 0;
+        }
+        .team-logo {
+            width: 52px; height: 52px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 800; color: white;
+            border: 2px solid rgba(255,255,255,0.1);
+            transition: transform 0.3s;
+        }
+        .match-card:hover .team-logo { transform: scale(1.08); }
+        .team-name {
+            font-size: 13px; font-weight: 600; text-align: center;
+            color: var(--text-primary);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 140px;
+        }
+        .versus {
+            color: var(--text-muted); font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.15em;
+            flex-shrink: 0;
+        }
+
+        .score-row {
+            text-align: center; padding: 10px 0;
+            border-top: 1px solid var(--border-glass);
+        }
+        .score-text {
+            font-family: var(--font-mono); font-size: 1.4rem;
+            font-weight: 700; color: var(--accent-cyan);
+        }
+        .over-text {
+            font-size: 12px; color: var(--text-muted);
+            font-family: var(--font-mono); margin-top: 2px;
+        }
+
+        /* ── Probability Bar ── */
+        .prob-bar-wrapper {
+            margin-top: 12px;
+        }
+        .prob-labels {
+            display: flex; justify-content: space-between;
+            font-size: 11px; font-weight: 600; margin-bottom: 5px;
+        }
+        .prob-track {
+            height: 6px; border-radius: 3px;
+            background: rgba(255, 255, 255, 0.06);
+            overflow: hidden; position: relative;
+        }
+        .prob-fill {
+            height: 100%; border-radius: 3px;
+            background: var(--gradient-primary);
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ── Points Table ── */
+        .points-table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        .points-table {
+            width: 100%; border-collapse: collapse;
+        }
+        .points-table th {
+            background: rgba(99, 102, 241, 0.08);
+            padding: 12px 16px; text-align: left;
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-glass);
+        }
+        .points-table td {
+            padding: 12px 16px; font-size: 13px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            color: var(--text-primary);
+        }
+        .points-table tr:hover td {
+            background: rgba(99, 102, 241, 0.04);
+        }
+        .points-table .team-cell {
+            display: flex; align-items: center; gap: 10px;
+            font-weight: 600;
+        }
+        .points-table .team-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .points-table td.nrr-positive { color: var(--accent-emerald); }
+        .points-table td.nrr-negative { color: var(--accent-rose); }
+
+        /* ── Shimmer Skeleton ── */
+        .skeleton-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 20px; min-height: 220px;
+        }
+        .shimmer {
+            background: linear-gradient(90deg,
+                rgba(255,255,255,0.03) 0%,
+                rgba(255,255,255,0.08) 50%,
+                rgba(255,255,255,0.03) 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.8s ease-in-out infinite;
+            border-radius: var(--radius-sm);
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .shimmer-line {
+            height: 14px; margin-bottom: 12px; border-radius: 4px;
+        }
+        .shimmer-line.w60 { width: 60%; }
+        .shimmer-line.w80 { width: 80%; }
+        .shimmer-line.w40 { width: 40%; }
+        .shimmer-circle {
+            width: 52px; height: 52px; border-radius: 50%;
+            margin: 0 auto 8px;
+        }
+
+        /* ── Source Health Panel ── */
+        .health-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 24px;
+        }
+        .health-panel h3 {
+            font-size: 14px; font-weight: 700;
+            color: var(--text-primary); margin-bottom: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .health-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-glass);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+        }
+        .health-item .h-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+        }
+        .health-item .h-name { font-weight: 600; color: var(--text-primary); }
+        .health-item .h-rate {
+            margin-left: auto; font-family: var(--font-mono);
+            font-size: 11px; color: var(--text-muted);
+        }
+
+        /* ── Empty State ── */
+        .empty-state {
+            text-align: center; padding: 60px 20px;
+            color: var(--text-muted);
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+        .empty-state h3 { font-size: 18px; color: var(--text-secondary); margin-bottom: 8px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .app-container { padding: 52px 12px 24px; }
+            .header h1 { font-size: 1.6rem; }
+            .match-grid { grid-template-columns: 1fr; }
+            #status-bar { padding: 0 12px; font-size: 10px; }
+            .health-grid { grid-template-columns: 1fr 1fr; }
+            .tab-nav { width: 100%; }
+            .tab-btn { flex: 1; text-align: center; padding: 8px 12px; font-size: 12px; }
+        }
+
+        /* ── Utility ── */
+        .hidden { display: none !important; }
+        .fade-in { animation: fadeIn 0.4s ease; }
     </style>
 </head>
 <body>
 
-<div class="app">
-    <header class="card header">
-        <div class="logo">
-            <div class="logo-icon"><i data-lucide="activity" style="color:white;width:24px;height:24px"></i></div>
-            <div class="logo-text">
-                <h1><span>IPL</span> Predictor</h1>
-                <p>ML-Powered Betting Analytics</p>
-            </div>
+    <!-- ═══ Status Bar ═══ -->
+    <div id="status-bar">
+        <div class="status-item">
+            <span class="status-dot green" id="status-dot"></span>
+            <span id="status-text">Connecting...</span>
         </div>
-        <div class="header-right">
-            <select id="match-selector" class="match-select"><option value="">Scanning matches...</option></select>
-            <div class="status-badge"><span class="dot"></span>Engine Active</div>
+        <div class="status-item">
+            <span id="source-count">—/5 Sources</span>
         </div>
-    </header>
-
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('live')">🔴 Live Predictions</button>
+        <div class="status-item">
+            <span id="last-update">Last update: —</span>
+        </div>
+        <div id="offline-badge" class="status-offline-badge hidden">OFFLINE MODE</div>
     </div>
 
-    <div id="tab-live" class="tab-content active">
-        <div class="grid-main">
-            <div class="card">
-                <div style="display:flex; gap: 30px;">
-                    <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-                        <div style="font-size: 14px; color: var(--text-muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                            Live Prediction Model
-                        </div>
-                        <div style="margin-bottom: 20px;">
-                            <h2 style="font-family: 'Outfit', sans-serif; font-size:42px; font-weight:700; background: linear-gradient(90deg, #fff, #a1a1aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height:1.1;" id="prob-text">-</h2>
-                            <div style="font-size: 16px; color: #a1a1aa; margin-top:5px; font-weight:500;">
-                                Prediction Interval: <span id="prob-range" style="color:white; font-weight:600;">-</span>
-                            </div>
-                            <div id="confidence-badge" style="display:inline-block; padding: 4px 10px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; border: 1px solid rgba(59, 130, 246, 0.3);">
-                                Model Confidence: -
-                            </div>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.2); border-radius: 12px; padding: 15px; border: 1px solid var(--border-color); display:flex; align-items:center; gap: 15px;">
-                            <i data-lucide="git-merge" style="color: #10b981; width:24px; height:24px;"></i>
-                            <div>
-                                <div style="font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Ensemble Agreement</div>
-                                <div id="agreement-metric" style="font-size: 18px; font-weight: 700; color: white;">-</div>
-                            </div>
-                        </div>
+    <div class="app-container">
+
+        <!-- ═══ Header ═══ -->
+        <div class="header">
+            <h1>IPL 2026 Prediction Engine</h1>
+            <p>Real-time win probability • Multi-source data pipeline • AI-powered insights</p>
+            <span class="version-badge">v3.0 — Never Empty Architecture</span>
+        </div>
+
+        <!-- ═══ Tabs ═══ -->
+        <nav class="tab-nav" id="tab-nav">
+            <button class="tab-btn active" data-tab="matches" id="tab-matches-btn">Live & Upcoming</button>
+            <button class="tab-btn" data-tab="points" id="tab-points-btn">Points Table</button>
+            <button class="tab-btn" data-tab="health" id="tab-health-btn">Data Sources</button>
+        </nav>
+
+        <!-- ═══ Tab: Matches ═══ -->
+        <div class="tab-content active" id="tab-matches">
+            <div class="match-grid" id="matches-grid">
+                <!-- Skeleton loaders (shown during initial fetch) -->
+                <div class="skeleton-card" id="skel-1">
+                    <div class="shimmer shimmer-line w60"></div>
+                    <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
+                        <div class="shimmer shimmer-circle"></div>
+                        <div class="shimmer shimmer-circle"></div>
                     </div>
-                    <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px; background: rgba(0,0,0,0.2); border-radius: 16px; border: 1px solid var(--border-color); flex-direction:column;">
-                        <div id="plotly-gauge" class="plotly-gauge-container"></div>
-                        <div style="display:flex; justify-content:space-between; width:100%; max-width:280px; margin-top:-20px; position:relative; z-index:10;">
-                            <div id="team1-gauge-label" style="font-weight:700; color:#fff; font-size:14px;">TEAM 1</div>
-                            <div id="team2-gauge-label" style="font-weight:700; color:#fff; font-size:14px;">TEAM 2</div>
-                        </div>
-                    </div>
+                    <div class="shimmer shimmer-line w80"></div>
+                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
                 </div>
-                <div class="card" style="margin-top: 24px;">
-                    <h3 style="display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border-color); padding-bottom:16px; margin-bottom:16px;">
-                        <i data-lucide="bar-chart-2" style="color: #f59e0b;"></i> Key Win Factors (SHAP)
-                    </h3>
-                    <div id="shap-factors" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-                        <div style="padding: 20px; text-align: center; color: var(--text-muted); grid-column: 1 / -1;">Awaiting live analysis...</div>
+                <div class="skeleton-card" id="skel-2">
+                    <div class="shimmer shimmer-line w60"></div>
+                    <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
+                        <div class="shimmer shimmer-circle"></div>
+                        <div class="shimmer shimmer-circle"></div>
                     </div>
+                    <div class="shimmer shimmer-line w80"></div>
+                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
+                </div>
+                <div class="skeleton-card" id="skel-3">
+                    <div class="shimmer shimmer-line w60"></div>
+                    <div style="display:flex;gap:20px;justify-content:center;margin:20px 0">
+                        <div class="shimmer shimmer-circle"></div>
+                        <div class="shimmer shimmer-circle"></div>
+                    </div>
+                    <div class="shimmer shimmer-line w80"></div>
+                    <div class="shimmer shimmer-line w40" style="margin-top:16px"></div>
                 </div>
             </div>
         </div>
+
+        <!-- ═══ Tab: Points Table ═══ -->
+        <div class="tab-content" id="tab-points">
+            <div class="points-table-wrap">
+                <table class="points-table" id="points-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>P</th>
+                            <th>W</th>
+                            <th>L</th>
+                            <th>NR</th>
+                            <th>Pts</th>
+                            <th>NRR</th>
+                        </tr>
+                    </thead>
+                    <tbody id="points-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ Tab: Data Sources Health ═══ -->
+        <div class="tab-content" id="tab-health">
+            <div class="health-panel">
+                <h3>⚡ Data Pipeline Status</h3>
+                <div class="health-grid" id="health-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+            <div class="health-panel">
+                <h3>📊 System Components</h3>
+                <div class="health-grid" id="system-grid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
     </div>
-</div>
 
-<script>
-    lucide.createIcons();
+    <script>
+    /* ═══════════════════════════════════════════════════════════════════════════
+       IPL 2026 Prediction Engine — Frontend Controller
+       "Never Empty" Architecture: Client-side fallback + multi-source pipeline
+       ═══════════════════════════════════════════════════════════════════════ */
 
-    // ─── State ───
-    let ws = null, activeMatchId = null, reconnectAttempts = 0;
-    const MAX_RECONNECT = 10;
+    // ── Team Data (embedded for offline support) ────────────────────────────
+    const TEAM_COLORS = {
+        'CSK': '#ffd700', 'MI': '#004ba0', 'RCB': '#d4213d', 'KKR': '#3a225d',
+        'SRH': '#ff822a', 'RR': '#ea1a85', 'DC': '#004c93', 'PBKS': '#ed1b24',
+        'GT': '#1c3c6e', 'LSG': '#004f91'
+    };
 
-    // ─── Chart Setup ───
-    const ctx = document.getElementById('probChart').getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, 'rgba(59,130,246,0.3)');
-    gradient.addColorStop(1, 'rgba(59,130,246,0)');
+    const TEAM_SHORT = {
+        'Chennai Super Kings': 'CSK', 'Mumbai Indians': 'MI',
+        'Royal Challengers Bengaluru': 'RCB', 'Royal Challengers Bangalore': 'RCB',
+        'Kolkata Knight Riders': 'KKR', 'Sunrisers Hyderabad': 'SRH',
+        'Rajasthan Royals': 'RR', 'Delhi Capitals': 'DC',
+        'Punjab Kings': 'PBKS', 'Kings XI Punjab': 'PBKS',
+        'Gujarat Titans': 'GT', 'Lucknow Super Giants': 'LSG'
+    };
 
-    const probChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: [],
-            datasets: [{
-                label: 'Win %',
-                data: [],
-                borderColor: '#3b82f6',
-                backgroundColor: gradient,
-                borderWidth: 2.5,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 0,
-                pointHoverRadius: 5,
-                pointHoverBackgroundColor: '#3b82f6'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { mode: 'index', intersect: false } },
-            scales: {
-                x: { grid: { display: false }, ticks: { color: '#5a6480', font: { size: 10 } } },
-                y: { min: 0, max: 100, grid: { color: 'rgba(99,115,171,0.08)' }, ticks: { color: '#5a6480', callback: v => v + '%', font: { size: 10 } } }
-            },
-            interaction: { mode: 'nearest', axis: 'x', intersect: false }
-        }
-    });
+    // ── Offline Fallback Schedule (first 15 matches) ────────────────────────
+    const OFFLINE_SCHEDULE = [
+        {match_id:'ipl2026_1',teams:['Royal Challengers Bengaluru','Sunrisers Hyderabad'],team_short:['RCB','SRH'],venue:'Bengaluru',date:'Mar 28, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_2',teams:['Mumbai Indians','Kolkata Knight Riders'],team_short:['MI','KKR'],venue:'Mumbai',date:'Mar 29, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_3',teams:['Rajasthan Royals','Chennai Super Kings'],team_short:['RR','CSK'],venue:'Guwahati',date:'Mar 30, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_4',teams:['Punjab Kings','Gujarat Titans'],team_short:['PBKS','GT'],venue:'New Chandigarh',date:'Mar 31, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_5',teams:['Lucknow Super Giants','Delhi Capitals'],team_short:['LSG','DC'],venue:'Lucknow',date:'Apr 01, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_6',teams:['Kolkata Knight Riders','Sunrisers Hyderabad'],team_short:['KKR','SRH'],venue:'Kolkata',date:'Apr 02, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_7',teams:['Chennai Super Kings','Punjab Kings'],team_short:['CSK','PBKS'],venue:'Chennai',date:'Apr 03, 2026',time_ist:'7:30 PM',status:'completed',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_8',teams:['Delhi Capitals','Mumbai Indians'],team_short:['DC','MI'],venue:'Delhi',date:'Apr 04, 2026',time_ist:'3:30 PM',status:'live',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_9',teams:['Gujarat Titans','Rajasthan Royals'],team_short:['GT','RR'],venue:'Ahmedabad',date:'Apr 04, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_10',teams:['Sunrisers Hyderabad','Lucknow Super Giants'],team_short:['SRH','LSG'],venue:'Hyderabad',date:'Apr 05, 2026',time_ist:'3:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_11',teams:['Royal Challengers Bengaluru','Chennai Super Kings'],team_short:['RCB','CSK'],venue:'Bengaluru',date:'Apr 05, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_12',teams:['Kolkata Knight Riders','Punjab Kings'],team_short:['KKR','PBKS'],venue:'Kolkata',date:'Apr 06, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_13',teams:['Rajasthan Royals','Mumbai Indians'],team_short:['RR','MI'],venue:'Guwahati',date:'Apr 07, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_14',teams:['Delhi Capitals','Gujarat Titans'],team_short:['DC','GT'],venue:'Delhi',date:'Apr 08, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+        {match_id:'ipl2026_15',teams:['Kolkata Knight Riders','Lucknow Super Giants'],team_short:['KKR','LSG'],venue:'Kolkata',date:'Apr 09, 2026',time_ist:'7:30 PM',status:'scheduled',score:'—',over:0,win_probability:0.5,source:'offline'},
+    ];
 
-    // ─── Tab Switching ───
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('tab-' + tabName).classList.add('active');
-        event.currentTarget.classList.add('active');
-        if (tabName === 'schedule') loadSchedule(2026);
-    }
+    const OFFLINE_POINTS = [
+        {name:'Chennai Super Kings',teamshortname:'CSK',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Delhi Capitals',teamshortname:'DC',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Gujarat Titans',teamshortname:'GT',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Kolkata Knight Riders',teamshortname:'KKR',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Lucknow Super Giants',teamshortname:'LSG',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Mumbai Indians',teamshortname:'MI',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Punjab Kings',teamshortname:'PBKS',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Rajasthan Royals',teamshortname:'RR',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Royal Challengers Bengaluru',teamshortname:'RCB',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+        {name:'Sunrisers Hyderabad',teamshortname:'SRH',matchesplayed:0,matcheswon:0,matcheslost:0,nr:0,points:0,nrr:'+0.000'},
+    ];
 
-    // ─── Match Polling ───
-    async function fetchMatches() {
-        try {
-            const res = await fetch('/matches');
-            const matches = await res.json();
-            const sel = document.getElementById('match-selector');
-            if (matches.length > 0) {
-                sel.innerHTML = matches.map(m => `<option value="${m.match_id}">${m.teams.join(' vs ')}</option>`).join('');
-                if (!activeMatchId) connectMatch(matches[0].match_id);
-            } else {
-                sel.innerHTML = '<option value="">No Live Matches</option>';
-                // Handle empty state gracefully
-                document.getElementById('team1-name').textContent = "Waiting";
-                document.getElementById('team2-name').textContent = "Match";
-                document.getElementById('team1-logo').style.background = "#5a6480";
-                document.getElementById('team1-logo').innerHTML = '<i data-lucide="clock" style="width:24px;height:24px;color:white"></i>';
-                document.getElementById('team2-logo').style.background = "#5a6480";
-                document.getElementById('team2-logo').innerHTML = '<i data-lucide="clock" style="width:24px;height:24px;color:white"></i>';
-                document.getElementById('live-score').textContent = "Offline";
-                document.getElementById('live-score').style.color = "var(--text-muted)";
-                document.getElementById('live-overs').textContent = "Check Schedule for upcoming games";
-                document.getElementById('prob-text').textContent = '-';
-                document.getElementById('prob-range').textContent = '-';
-                if (window.lucide) window.lucide.createIcons();
-            }
-        } catch(e) { console.error('Match fetch error', e); }
-    }
+    // ── State ───────────────────────────────────────────────────────────────
+    let isOffline = false;
+    let currentMatches = [];
+    let currentHealth = null;
+    let retryCount = 0;
+    let lastFetchTime = 0;
+    const MAX_RETRY_INTERVAL = 60000; // 60s max
 
-    function connectMatch(id) {
-        if (ws) ws.close();
-        activeMatchId = id;
-        reconnectAttempts = 0;
-        openWebSocket(id);
-    }
+    // ── API Base ────────────────────────────────────────────────────────────
+    const API_BASE = window.location.origin;
 
-    function openWebSocket(id) {
-        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        ws = new WebSocket(`${proto}//${location.host}/ws/predictions/${id}`);
-
-        ws.onmessage = (e) => {
-            try {
-                const data = JSON.parse(e.data);
-                updateDashboard(data);
-                reconnectAttempts = 0;
-            } catch(err) { console.error('Parse error:', err); }
-        };
-
-        ws.onclose = () => {
-            if (reconnectAttempts < MAX_RECONNECT) {
-                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                reconnectAttempts++;
-                console.log(`Reconnecting in ${delay}ms (attempt ${reconnectAttempts})`);
-                setTimeout(() => openWebSocket(id), delay);
-            }
-        };
-        ws.onerror = (err) => console.error('WS error:', err);
-    }
-
-    // ─── Dashboard Update ───
-    function updateDashboard(data) {
-        const p = (data.win_probability || 0.5) * 100;
-        const prob = p.toFixed(1);
-        const lossPct = (100 - p).toFixed(1);
-
-        // Score & Overs
-        if (data.score) document.getElementById('live-score').textContent = data.score;
-        if (data.over !== undefined) document.getElementById('live-overs').textContent = data.over + ' Overs';
-
-        // Teams
-        const t1 = (data.teams && data.teams[0]) ? data.teams[0] : 'Team 1';
-        const t2 = (data.teams && data.teams[1]) ? data.teams[1] : 'Team 2';
-        if (data.teams && data.teams.length >= 2) {
-            document.getElementById('team1-name').textContent = t1;
-            document.getElementById('team2-name').textContent = t2;
-            document.getElementById('team1-logo').textContent = t1.substring(0, 3).toUpperCase();
-            document.getElementById('team2-logo').textContent = t2.substring(0, 3).toUpperCase();
-        }
-
-        // ── Prediction Range (interval) ──
-        const intMin = data.interval_min !== undefined ? (data.interval_min * 100).toFixed(1) : (p - 5).toFixed(1);
-        const intMax = data.interval_max !== undefined ? (data.interval_max * 100).toFixed(1) : (p + 5).toFixed(1);
-        document.getElementById('prob-text').textContent = `${t1} ${prob}%`;
-        const rangeEl = document.getElementById('prob-range');
-        if (rangeEl) rangeEl.textContent = `${intMin}% – ${intMax}%`;
-
-        // ── Confidence Badge ──
-        const confPct = data.confidence_pct !== undefined ? data.confidence_pct.toFixed(1) : (data.confidence ? (data.confidence * 100).toFixed(1) : '--');
-        const badge = document.getElementById('confidence-badge');
-        if (badge) {
-            if (data.status === 'LOW_CONFIDENCE') {
-                badge.innerHTML = `⚠️ LOW CONFIDENCE (${confPct}%)`;
-                badge.style.background = 'rgba(245,158,11,0.2)';
-                badge.style.color = '#fbbf24';
-                badge.style.borderColor = 'rgba(245,158,11,0.3)';
-            } else {
-                badge.textContent = `Model Confidence: ${confPct}%`;
-                badge.style.background = 'rgba(16,185,129,0.2)';
-                badge.style.color = '#34d399';
-                badge.style.borderColor = 'rgba(16,185,129,0.3)';
-            }
-        }
-
-        // ── Ensemble Agreement ──
-        const agreeEl = document.getElementById('agreement-metric');
-        if (agreeEl) {
-            const agree = data.agreement_pct !== undefined ? data.agreement_pct.toFixed(1) : '--';
-            agreeEl.textContent = agree !== '--' ? `${agree}%` : '--';
-            agreeEl.style.color = parseFloat(agree) > 75 ? '#34d399' : '#fbbf24';
-        }
-
-        // ── Plotly Gauge ──
-        renderPlotlyGauge(data.win_probability || 0.5, t1, t2);
-
-        // ── SHAP Impact Factors ──
-        if (data.impact_factors) renderShapFactors(data.impact_factors);
-
-        // ── Scenario Milestone Panel ──
-        const scenario = data.scenario;
-        if (scenario) {
-            const p180 = ((scenario.prob_180_plus || 0) * 100).toFixed(1);
-            const p90Score = (scenario.p90_score || 0).toFixed(0);
-            const medianScore = (scenario.projected_median_score || 0).toFixed(0);
-            const agentEl = document.getElementById('agent-panel');
-            if (agentEl) {
-                agentEl.innerHTML = `
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <div style="background:var(--bg-elevated);padding:10px;border-radius:8px;text-align:center;">
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Median Score</div>
-                            <div style="font-size:22px;font-weight:800;color:white;">${medianScore}</div>
-                        </div>
-                        <div style="background:var(--bg-elevated);padding:10px;border-radius:8px;text-align:center;">
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">P90 Ceiling</div>
-                            <div style="font-size:22px;font-weight:800;color:#60a5fa;">${p90Score}</div>
-                        </div>
-                        <div style="background:rgba(16,185,129,0.1);padding:10px;border-radius:8px;text-align:center;border:1px solid rgba(16,185,129,0.3);">
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">180+ Prob</div>
-                            <div style="font-size:20px;font-weight:800;color:#34d399;">${p180}%</div>
-                        </div>
-                        <div style="background:rgba(239,68,68,0.1);padding:10px;border-radius:8px;text-align:center;border:1px solid rgba(239,68,68,0.3);">
-                            <div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;">Early Collapse</div>
-                            <div style="font-size:20px;font-weight:800;color:#f87171;">${((scenario.prob_early_collapse || 0)*100).toFixed(1)}%</div>
-                        </div>
-                    </div>`;
-            }
-        }
-
-        // Winner odds (live tab & odds tab)
-        if (data.teams && data.teams.length >= 2) {
-            const d1 = prob > 50 ? (100 / prob).toFixed(2) : (100 / prob).toFixed(2);
-            const d2 = (100 / lossPct).toFixed(2);
-            const oddsHtml = `
-                <div class="odds-card"><div><div class="selection">${data.teams[0]}</div><div class="selection-sub">${prob}% implied</div></div><div class="odds-value favorite">${d1}</div></div>
-                <div class="odds-card"><div><div class="selection">${data.teams[1]}</div><div class="selection-sub">${lossPct}% implied</div></div><div class="odds-value underdog">${d2}</div></div>
-            `;
-            document.getElementById('winner-odds').innerHTML = oddsHtml;
-            document.getElementById('odds-match-winner').innerHTML = oddsHtml;
-        }
-
-        // Over/Under (build from current state)
-        const crr = data.crr || 7.5;
-        const projected = Math.round(crr * 20);
-        const lines = [projected - 30, projected - 15, projected, projected + 15, projected + 30].filter(l => l > 100);
-        let ouHtml = '';
-        lines.forEach(line => {
-            const overProb = Math.max(10, Math.min(90, 50 + (projected - line) * 2));
-            const underProb = 100 - overProb;
-            const overOdds = (100 / overProb).toFixed(2);
-            const underOdds = (100 / underProb).toFixed(2);
-            ouHtml += `<tr><td style="font-weight:700">${line}</td><td><span class="ou-cell">${overOdds}</span></td><td><span class="ou-cell">${underOdds}</span></td></tr>`;
+    // ── Tabs ────────────────────────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
         });
-        document.getElementById('ou-body').innerHTML = ouHtml;
-
-        // Agent panel
-        if (data.agent_confidence !== undefined) {
-            const agentConf = Math.round(data.agent_confidence * 100);
-            const agentDisagree = (data.agent_disagreement || 0).toFixed(3);
-            document.getElementById('agent-panel').innerHTML = `
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-elevated);border-radius:8px">
-                    <span style="font-size:12px;color:var(--text-secondary)">Swarm Confidence</span>
-                    <span style="font-weight:700;font-size:18px;color:var(--accent-green)">${agentConf}%</span>
-                </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-elevated);border-radius:8px">
-                    <span style="font-size:12px;color:var(--text-secondary)">Disagreement σ</span>
-                    <span style="font-weight:700;font-size:18px;color:var(--accent-amber)">${agentDisagree}</span>
-                </div>
-            `;
-        }
-
-        // Chart update
-        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        if (probChart.data.labels.length > 30) { probChart.data.labels.shift(); probChart.data.datasets[0].data.shift(); }
-        probChart.data.labels.push(now);
-        probChart.data.datasets[0].data.push(prob);
-        probChart.update('none');
-    }
-
-    // ─── Schedule & Points ───
-    async function loadSchedule(season) {
-        try {
-            const [upRes, ptRes] = await Promise.all([fetch(`/upcoming/${season}`), fetch(`/points/${season}`)]);
-            if (upRes.ok) {
-                const up = await upRes.json();
-                if (up && up.matchschedule) {
-                    let h = '<table class="points-table"><tr><th>Date</th><th>Match</th><th>Venue</th></tr>';
-                    up.matchschedule.slice(0, 15).forEach(m => { h += `<tr><td>${m.matchdate || ''}</td><td style="font-weight:600">${m.teama || ''} vs ${m.teamb || ''}</td><td style="color:var(--text-muted)">${m.venue || ''}</td></tr>`; });
-                    h += '</table>';
-                    document.getElementById('schedule-container').innerHTML = h;
-                } else { document.getElementById('schedule-container').textContent = 'No schedule data available.'; }
-            }
-            if (ptRes.ok) {
-                const pt = await ptRes.json();
-                if (pt && pt.points) {
-                    let h = '<table class="points-table"><tr><th>Team</th><th>M</th><th>W</th><th>L</th><th>Pts</th><th>NRR</th></tr>';
-                    pt.points.forEach(p => { h += `<tr><td style="font-weight:700">${p.teamshortname || p.name || ''}</td><td>${p.matchesplayed || ''}</td><td style="color:var(--accent-green)">${p.matcheswon || ''}</td><td style="color:var(--accent-red)">${p.matcheslost || ''}</td><td style="font-weight:800;color:var(--accent-blue)">${p.points || ''}</td><td>${p.nrr || ''}</td></tr>`; });
-                    h += '</table>';
-                    document.getElementById('points-container').innerHTML = h;
-                } else { document.getElementById('points-container').textContent = 'No points table data.'; }
-            }
-        } catch(e) { console.error('Schedule error:', e); }
-    }
-
-    // ─── Player Analysis ───
-    let searchTO;
-    document.getElementById('player-search').addEventListener('keyup', function() {
-        const q = this.value;
-        const rd = document.getElementById('search-results');
-        if (q.length < 3) { rd.style.display = 'none'; return; }
-        clearTimeout(searchTO);
-        searchTO = setTimeout(async () => {
-            try {
-                const res = await fetch(`/ipl/players?search=${encodeURIComponent(q)}`);
-                const data = await res.json();
-                if (data.players && data.players.length > 0) {
-                    rd.innerHTML = data.players.slice(0, 10).map(p => `<div class="search-item" onclick="selectPlayer('${p.replace(/'/g,"\\'")}')">${p}</div>`).join('');
-                    rd.style.display = 'block';
-                } else { rd.style.display = 'none'; }
-            } catch(e) { console.error(e); }
-        }, 300);
     });
 
-    async function selectPlayer(name) {
-        document.getElementById('player-search').value = name;
-        document.getElementById('search-results').style.display = 'none';
-        try {
-            const res = await fetch(`/ipl/player/${encodeURIComponent(name)}`);
-            if (res.ok) {
-                const d = await res.json();
-                document.getElementById('ps-name').textContent = d.player;
-                document.getElementById('ps-runs').textContent = d.batting.runs;
-                document.getElementById('ps-sr').textContent = d.batting.strike_rate;
-                document.getElementById('ps-4s').textContent = d.batting.fours;
-                document.getElementById('ps-6s').textContent = d.batting.sixes;
-                document.getElementById('ps-wkts').textContent = d.bowling.wickets;
-                document.getElementById('ps-econ').textContent = d.bowling.economy;
-                document.getElementById('ps-bmat').textContent = d.bowling.matches;
-                document.getElementById('player-stats').style.display = 'block';
-            }
-        } catch(e) { console.error(e); }
+    // ── Team Helpers ────────────────────────────────────────────────────────
+    function getShort(name) {
+        return TEAM_SHORT[name] || name.substring(0, 3).toUpperCase();
+    }
+    function getColor(short) {
+        return TEAM_COLORS[short] || '#6366f1';
     }
 
-    document.addEventListener('click', e => { if (e.target.id !== 'player-search') document.getElementById('search-results').style.display = 'none'; });
-    document.getElementById('match-selector').addEventListener('change', e => { if (e.target.value) connectMatch(e.target.value); });
+    // ── Fetch with Retry ────────────────────────────────────────────────────
+    async function apiFetch(endpoint) {
+        try {
+            const resp = await fetch(`${API_BASE}${endpoint}`, { signal: AbortSignal.timeout(10000) });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            retryCount = 0;
+            return await resp.json();
+        } catch (e) {
+            retryCount++;
+            throw e;
+        }
+    }
 
-    // ─── Init ───
-    setInterval(fetchMatches, 10000);
-    fetchMatches();
-</script>
+    // ── Render Match Card ───────────────────────────────────────────────────
+    function renderMatchCard(match) {
+        const teams = match.teams || ['TBD', 'TBD'];
+        const t1 = teams[0] || 'TBD';
+        const t2 = teams[1] || 'TBD';
+        const s1 = (match.team_short && match.team_short[0]) || getShort(t1);
+        const s2 = (match.team_short && match.team_short[1]) || getShort(t2);
+        const c1 = getColor(s1);
+        const c2 = getColor(s2);
+        const status = match.status || 'scheduled';
+        const score = match.score || '—';
+        const over = match.over || 0;
+        const prob = match.win_probability || 0.5;
+        const venue = match.venue || 'TBD';
+        const matchNum = match.match_num || '';
+        const dateStr = match.date || '';
+        const timeStr = match.time_ist || '';
+
+        const isLive = status === 'live';
+        const cardClass = isLive ? 'match-card live-card fade-in' : 'match-card fade-in';
+
+        let statusBadge = '';
+        if (status === 'live') {
+            statusBadge = '<span class="live-badge status-live"><span class="badge-dot"></span>LIVE</span>';
+        } else if (status === 'completed') {
+            statusBadge = '<span class="live-badge status-completed">Completed</span>';
+        } else {
+            statusBadge = '<span class="live-badge status-scheduled">Upcoming</span>';
+        }
+
+        const probPct = Math.round(prob * 100);
+        const probPct2 = 100 - probPct;
+
+        let scoreSection = '';
+        if (score && score !== '—' && score !== '0/0') {
+            scoreSection = `
+                <div class="score-row">
+                    <div class="score-text">${score}</div>
+                    ${over > 0 ? `<div class="over-text">${over} overs</div>` : ''}
+                </div>`;
+        } else if (dateStr) {
+            scoreSection = `
+                <div class="score-row">
+                    <div class="score-text" style="font-size:1rem;color:var(--text-secondary)">${timeStr || '7:30 PM'} IST</div>
+                    <div class="over-text">${dateStr}</div>
+                </div>`;
+        }
+
+        return `
+        <div class="${cardClass}" id="card-${match.match_id}">
+            <div class="card-header">
+                <div class="match-meta">
+                    <span class="match-label">${matchNum ? 'Match ' + matchNum : 'IPL 2026'} • ${venue}</span>
+                </div>
+                ${statusBadge}
+            </div>
+            <div class="teams-row">
+                <div class="team-block">
+                    <div class="team-logo" style="background:${c1}">${s1}</div>
+                    <div class="team-name">${t1}</div>
+                </div>
+                <span class="versus">VS</span>
+                <div class="team-block">
+                    <div class="team-logo" style="background:${c2}">${s2}</div>
+                    <div class="team-name">${t2}</div>
+                </div>
+            </div>
+            ${scoreSection}
+            <div class="prob-bar-wrapper">
+                <div class="prob-labels">
+                    <span style="color:${c1}">${s1} ${probPct}%</span>
+                    <span style="color:${c2}">${s2} ${probPct2}%</span>
+                </div>
+                <div class="prob-track">
+                    <div class="prob-fill" style="width:${probPct}%;background:linear-gradient(90deg,${c1},${c2})"></div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ── Render Matches Grid ─────────────────────────────────────────────────
+    function renderMatches(matches) {
+        const grid = document.getElementById('matches-grid');
+        if (!matches || matches.length === 0) {
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column:1/-1">
+                    <div class="icon">🏏</div>
+                    <h3>No Matches Found</h3>
+                    <p>Check back later for upcoming IPL 2026 matches.</p>
+                </div>`;
+            return;
+        }
+
+        // Sort: live first, then by match_num/date, completed last
+        matches.sort((a, b) => {
+            const order = { live: 0, scheduled: 1, completed: 2 };
+            const sa = order[a.status] ?? 1;
+            const sb = order[b.status] ?? 1;
+            if (sa !== sb) return sa - sb;
+            return (a.start_epoch || 0) - (b.start_epoch || 0);
+        });
+
+        // Show first 20 matches max to keep UI snappy
+        const visible = matches.slice(0, 20);
+        grid.innerHTML = visible.map(renderMatchCard).join('');
+        currentMatches = matches;
+    }
+
+    // ── Render Points Table ─────────────────────────────────────────────────
+    function renderPointsTable(points) {
+        const tbody = document.getElementById('points-body');
+        if (!points || points.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--text-muted)">No data available</td></tr>';
+            return;
+        }
+
+        // Sort by points desc, then NRR
+        points.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            return parseFloat(b.nrr) - parseFloat(a.nrr);
+        });
+
+        tbody.innerHTML = points.map((team, i) => {
+            const short = team.teamshortname || getShort(team.name);
+            const color = getColor(short);
+            const nrrVal = parseFloat(team.nrr || '0');
+            const nrrClass = nrrVal > 0 ? 'nrr-positive' : nrrVal < 0 ? 'nrr-negative' : '';
+            return `
+                <tr>
+                    <td style="font-weight:700;color:var(--text-muted)">${i + 1}</td>
+                    <td>
+                        <div class="team-cell">
+                            <span class="team-dot" style="background:${color}"></span>
+                            ${team.name || short}
+                        </div>
+                    </td>
+                    <td>${team.matchesplayed || 0}</td>
+                    <td style="color:var(--accent-emerald)">${team.matcheswon || 0}</td>
+                    <td style="color:var(--accent-rose)">${team.matcheslost || 0}</td>
+                    <td>${team.nr || 0}</td>
+                    <td style="font-weight:700">${team.points || 0}</td>
+                    <td class="${nrrClass}">${team.nrr || '+0.000'}</td>
+                </tr>`;
+        }).join('');
+    }
+
+    // ── Render Health Panel ──────────────────────────────────────────────────
+    function renderHealth(health) {
+        const grid = document.getElementById('health-grid');
+        const sysGrid = document.getElementById('system-grid');
+        if (!health || !health.sources) {
+            grid.innerHTML = '<div class="health-item"><span class="h-name">No data</span></div>';
+            return;
+        }
+
+        const sourceNames = {
+            'espn': '🌐 ESPN API',
+            'cricbuzz': '🏏 Cricbuzz API',
+            'jina': '📖 Jina Reader',
+            'html_scraper': '🔍 HTML Scraper',
+            'static': '📋 Static Schedule'
+        };
+
+        grid.innerHTML = Object.entries(health.sources).map(([key, src]) => {
+            const statusColor = src.status === 'healthy' ? 'var(--accent-emerald)' :
+                                src.status === 'degraded' ? 'var(--accent-amber)' : 'var(--accent-rose)';
+            return `
+                <div class="health-item">
+                    <span class="h-dot" style="background:${statusColor}"></span>
+                    <span class="h-name">${sourceNames[key] || key}</span>
+                    <span class="h-rate">${src.success_rate}%</span>
+                </div>`;
+        }).join('');
+
+        sysGrid.innerHTML = `
+            <div class="health-item">
+                <span class="h-dot" style="background:${health.ml_engine_loaded ? 'var(--accent-emerald)' : 'var(--accent-rose)'}"></span>
+                <span class="h-name">ML Engine</span>
+                <span class="h-rate">${health.ml_engine_loaded ? 'Loaded' : 'Off'}</span>
+            </div>
+            <div class="health-item">
+                <span class="h-dot" style="background:${health.redis_connected ? 'var(--accent-emerald)' : 'var(--accent-amber)'}"></span>
+                <span class="h-name">Redis</span>
+                <span class="h-rate">${health.redis_connected ? 'Connected' : 'Memory-only'}</span>
+            </div>
+            <div class="health-item">
+                <span class="h-dot" style="background:var(--accent-emerald)"></span>
+                <span class="h-name">Cache</span>
+                <span class="h-rate">${health.cache_size || 0} entries</span>
+            </div>
+            <div class="health-item">
+                <span class="h-dot" style="background:var(--accent-cyan)"></span>
+                <span class="h-name">Last Source</span>
+                <span class="h-rate">${health.last_source_used || '—'}</span>
+            </div>`;
+    }
+
+    // ── Update Status Bar ───────────────────────────────────────────────────
+    function updateStatusBar(online, activeCount, totalCount) {
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        const sources = document.getElementById('source-count');
+        const update = document.getElementById('last-update');
+        const badge = document.getElementById('offline-badge');
+
+        if (online) {
+            dot.className = 'status-dot green';
+            text.textContent = 'Connected';
+            badge.classList.add('hidden');
+        } else {
+            dot.className = 'status-dot amber';
+            text.textContent = 'Offline Mode';
+            badge.classList.remove('hidden');
+        }
+
+        sources.textContent = `${activeCount}/${totalCount} Sources`;
+        const now = new Date();
+        update.textContent = `Updated: ${now.toLocaleTimeString()}`;
+    }
+
+    // ── Data Fetch Pipeline ─────────────────────────────────────────────────
+    async function fetchAllData() {
+        let matchesLoaded = false;
+        let activeSources = 0;
+        let totalSources = 5;
+
+        // 1. Fetch matches
+        try {
+            const matches = await apiFetch('/matches');
+            if (matches && matches.length > 0) {
+                renderMatches(matches);
+                matchesLoaded = true;
+                isOffline = false;
+                lastFetchTime = Date.now();
+                // Cache in localStorage for offline
+                try { localStorage.setItem('ipl_matches_cache', JSON.stringify(matches)); } catch(e) {}
+            }
+        } catch (e) {
+            console.warn('Matches API failed:', e.message);
+        }
+
+        // 2. If API failed, try localStorage cache
+        if (!matchesLoaded) {
+            try {
+                const cached = localStorage.getItem('ipl_matches_cache');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (parsed.length > 0) {
+                        renderMatches(parsed);
+                        matchesLoaded = true;
+                        console.info('Using localStorage cache');
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // 3. Ultimate fallback: hardcoded offline schedule
+        if (!matchesLoaded) {
+            isOffline = true;
+            // DYNAMIC STATUS CALCULATION (BUG 8 FIX)
+            const dynamicOffline = OFFLINE_SCHEDULE.map(m => {
+                const copy = {...m};
+                const dt = new Date(`${m.date} ${m.time_ist}`);
+                if (!isNaN(dt.getTime())) {
+                    const epoch = dt.getTime() / 1000;
+                    copy.start_epoch = epoch;
+                    const now = Date.now() / 1000;
+                    if (now < epoch) copy.status = 'scheduled';
+                    else if (now < epoch + 14400) copy.status = 'live'; // 4 hours
+                    else copy.status = 'completed';
+                }
+                return copy;
+            });
+            renderMatches(dynamicOffline);
+            matchesLoaded = true;
+            console.info('Using offline fallback schedule with dynamic status');
+        }
+
+        // 4. Fetch health data
+        try {
+            const health = await apiFetch('/api/data-health');
+            currentHealth = health;
+            renderHealth(health);
+            activeSources = health.active_sources || 0;
+            totalSources = health.total_sources || 5;
+        } catch (e) {
+            activeSources = isOffline ? 1 : 3;
+        }
+
+        // 5. Fetch points table
+        try {
+            const pts = await apiFetch('/points/2026');
+            if (pts && pts.points && pts.points.length > 0) {
+                renderPointsTable(pts.points);
+            } else {
+                renderPointsTable(OFFLINE_POINTS);
+            }
+        } catch (e) {
+            renderPointsTable(OFFLINE_POINTS);
+        }
+
+        updateStatusBar(!isOffline, activeSources, totalSources);
+    }
+
+    // ── Auto-Refresh Loop ───────────────────────────────────────────────────
+    function getRefreshInterval() {
+        // Adaptive: faster when live matches exist, slower otherwise
+        const hasLive = currentMatches.some(m => m.status === 'live');
+        if (hasLive) return 15000; // 15s for live
+        if (retryCount > 3) return Math.min(MAX_RETRY_INTERVAL, 10000 * retryCount);
+        return 30000; // 30s default
+    }
+
+    async function refreshLoop() {
+        await fetchAllData();
+        const interval = getRefreshInterval();
+        setTimeout(refreshLoop, interval);
+    }
+
+    // ── Bootstrap ───────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+        refreshLoop();
+    });
+    </script>
 </body>
 </html>

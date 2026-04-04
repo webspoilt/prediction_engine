@@ -1,9 +1,20 @@
+"""
+IPL Prediction Engine — API Server (v3.0 "Never Empty")
+=========================================================
+Self-sufficient FastAPI server with:
+  - MultiSourceFetcher waterfall pipeline (5-source cascading)
+  - In-memory TTL cache primary, Redis optional secondary
+  - /matches: ALWAYS returns data (never empty)
+  - /api/data-health: Real-time status of all 5 scrapers
+  - /api/offline-sync: Pre-loads 2026 schedule for offline UI
+  - All existing endpoints preserved (predict, simulate, fantasy, etc.)
+"""
+
 import os
 import json
 import time
 import asyncio
 import logging
-import redis
 import random
 import numpy as np
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -17,10 +28,11 @@ from contextlib import asynccontextmanager
 from backend.config import settings
 
 # Logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-# Custom JSON Encoder for NumPy types (Pro-fix for ML serialization 500s)
+
+# ── Custom JSON Encoder for NumPy types ──────────────────────────────────────
 class NumPyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
@@ -31,7 +43,10 @@ class NumPyEncoder(json.JSONEncoder):
             return obj.tolist()
         return super(NumPyEncoder, self).default(obj)
 
-# ─── Lifespan ─────────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Lifespan
+# ═══════════════════════════════════════════════════════════════════════════════
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -42,7 +57,7 @@ async def lifespan(app: FastAPI):
     betting_engine = None
 
     try:
-        logger.info("🚀 Starting IPL Prediction Engine...")
+        logger.info("🚀 Starting IPL Prediction Engine v3.0 (Never Empty)...")
 
         # 0. Initialize Data Structures
         try:
@@ -52,7 +67,16 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.warning(f"⚠️ Failed to auto-initialize base data: {e}")
 
-        # 1. Database (optional — degrades gracefully)
+        # 1. Initialize MultiSourceFetcher (the core waterfall pipeline)
+        try:
+            from backend.data_pipeline.multi_source_fetcher import get_fetcher
+            fetcher = get_fetcher()
+            app.state.fetcher = fetcher
+            logger.info(f"✅ MultiSourceFetcher initialized ({len(fetcher.get_static_schedule())} static matches)")
+        except Exception as e:
+            logger.error(f"❌ MultiSourceFetcher init failed: {e}")
+
+        # 2. Database (optional — degrades gracefully)
         try:
             from backend.infrastructure.db_manager import DatabaseManager
             db_manager = DatabaseManager()
@@ -64,27 +88,30 @@ async def lifespan(app: FastAPI):
             logger.warning(f"⚠️ Database unavailable (running without persistence): {e}")
             db_manager = None
 
-        # 2. Redis (optional — degrades gracefully)
+        # 3. Redis (optional — degrades gracefully)
+        redis_client = None
         if settings.REDIS_ENABLED:
             try:
+                import redis
                 app.state.redis_pool = redis.ConnectionPool(
                     host=settings.REDIS_HOST,
                     port=settings.REDIS_PORT,
                     db=settings.REDIS_DB,
                     password=settings.REDIS_PASSWORD,
-                    decode_responses=True
+                    decode_responses=True,
                 )
-                r = redis.Redis(connection_pool=app.state.redis_pool)
-                r.ping()
+                redis_client = redis.Redis(connection_pool=app.state.redis_pool)
+                redis_client.ping()
                 logger.info("✅ Redis connected")
             except Exception as e:
-                logger.warning(f"⚠️ Redis unavailable (running in degraded mode): {e}")
+                logger.warning(f"⚠️ Redis unavailable (running in memory-only mode): {e}")
                 app.state.redis_pool = None
+                redis_client = None
         else:
             app.state.redis_pool = None
             logger.info("ℹ️ Redis disabled by config")
 
-        # 3. ML Engine
+        # 4. ML Engine
         try:
             from backend.ml_engine.hybrid_model import RealTimePredictor
             predictor = RealTimePredictor(repo_id=settings.HF_REPO_ID)
@@ -93,7 +120,7 @@ async def lifespan(app: FastAPI):
             logger.warning(f"⚠️ ML Engine failed to load (predictions unavailable): {e}")
             predictor = None
 
-        # 4. Betting Engine
+        # 5. Betting Engine
         try:
             from backend.api.betting_engine import BettingEngine
             betting_engine = BettingEngine(bookmaker_margin=settings.BOOKMAKER_MARGIN)
@@ -102,7 +129,7 @@ async def lifespan(app: FastAPI):
             logger.warning(f"⚠️ Betting Engine failed: {e}")
             betting_engine = None
 
-        # 5. Background Match Discovery (auto-detect live IPL matches)
+        # 6. Background Match Discovery (uses MultiSourceFetcher)
         app.state.discovery_task = asyncio.create_task(
             run_discovery_loop(app), name="match_discovery"
         )
@@ -114,9 +141,9 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down...")
-    if hasattr(app.state, 'discovery_task'):
+    if hasattr(app.state, "discovery_task"):
         app.state.discovery_task.cancel()
-    if hasattr(app.state, 'redis_pool') and app.state.redis_pool:
+    if hasattr(app.state, "redis_pool") and app.state.redis_pool:
         app.state.redis_pool.disconnect()
     if db_manager:
         await db_manager.close()
@@ -125,8 +152,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="IPL Prediction Engine API",
     description="Real-time match win probability engine with XGBoost + LSTM + Transformer",
-    version="2.0.0",
-    lifespan=lifespan
+    version="3.0.0",
+    lifespan=lifespan,
 )
 
 # CORS
@@ -144,67 +171,46 @@ app.mount("/static", StaticFiles(directory="backend/static"), name="static")
 
 # Include sub-routers
 from backend.api.stats_router import router as stats_router
+
 app.include_router(stats_router)
 
-# ─── Global State ─────────────────────────────────────────────────────────────
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Global State
+# ═══════════════════════════════════════════════════════════════════════════════
+
 predictor = None
 db_manager = None
 betting_engine = None
 active_scrapers: Dict[str, asyncio.Task] = {}
-GLOBAL_MATCH_CACHE: Dict[str, Dict] = {}
 
-def load_static_schedule_to_cache():
-    """Seed memory cache with Emergency Hardcoded + CSV Fallback (Instant-On UI)."""
-    import csv
-    
-    # 1. EMERGENCY HARDCODED (Ensures UI is NEVER empty)
-    emergency_matches = [
-        {"match_id": "emergency_1", "teams": ["Chennai Super Kings", "Mumbai Indians"], "venue": "Chennai", "status": "scheduled"},
-        {"match_id": "emergency_2", "teams": ["Royal Challengers Bengaluru", "Sunrisers Hyderabad"], "venue": "Bengaluru", "status": "scheduled"},
-        {"match_id": "emergency_3", "teams": ["Kolkata Knight Riders", "Gujarat Titans"], "venue": "Kolkata", "status": "scheduled"}
-    ]
-    for m in emergency_matches:
-        m.update({"score": "0/0", "over": 0.0, "win_probability": 0.52}) # seeded probability
-        GLOBAL_MATCH_CACHE[m["match_id"]] = m
 
-    # 2. MULTI-LOCATION CSV SCAN
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    locations = [
-        os.path.join(current_dir, 'data_pipeline', 'ipl_2026_schedule.csv'),
-        os.path.join(os.getcwd(), 'backend', 'data_pipeline', 'ipl_2026_schedule.csv'),
-        os.path.join(os.getcwd(), 'ipl_2026_schedule.csv')
-    ]
-    
-    csv_path = None
-    for loc in locations:
-        if os.path.exists(loc):
-            csv_path = loc; break
-
-    if not csv_path:
-        logger.warning(f"⚠️ Schedule CSV not found. Using emergency matches only.")
-        return
-
+# ── Helper: Get Redis client safely ──────────────────────────────────────────
+def get_redis():
+    """Get a Redis client or None if unavailable."""
     try:
-        with open(csv_path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                m_id = f"scheduled_{row['Match']}"
-                teams = row['Match details'].split(' vs ')
-                GLOBAL_MATCH_CACHE[m_id] = {
-                    "match_id": m_id,
-                    "teams": teams if len(teams) == 2 else ["TBD", "TBD"],
-                    "status": "scheduled",
-                    "venue": row['Venue'],
-                    "score": "0/0",
-                    "over": 0.0,
-                    "win_probability": 0.5
-                }
-        logger.info(f"✅ Pre-loaded {len(GLOBAL_MATCH_CACHE)} matches into memory")
-    except Exception as e:
-        logger.error(f"Failed to seed match cache from {csv_path}: {e}")
+        import redis
+        pool = getattr(app.state, "redis_pool", None)
+        if pool:
+            r = redis.Redis(connection_pool=pool)
+            r.ping()
+            return r
+    except Exception:
+        pass
+    return None
 
-# ─── Agent Simulator (lazy init) ─────────────────────────────────────────────
+
+# ── Helper: Get MultiSourceFetcher ───────────────────────────────────────────
+def get_fetcher():
+    """Get the global MultiSourceFetcher singleton."""
+    from backend.data_pipeline.multi_source_fetcher import get_fetcher as _get
+    return _get()
+
+
+# ── Agent Simulator (lazy init) ──────────────────────────────────────────────
 _agent_swarm = None
+
+
 def get_agent_swarm():
     global _agent_swarm
     if _agent_swarm is None:
@@ -215,8 +221,11 @@ def get_agent_swarm():
             _agent_swarm = None
     return _agent_swarm
 
-# ─── Scenario Simulator (lazy init) ───────────────────────────────────────────
+
+# ── Scenario Simulator (lazy init) ───────────────────────────────────────────
 _scenario_sim = None
+
+
 def get_scenario_sim():
     global _scenario_sim
     if _scenario_sim is None:
@@ -236,18 +245,19 @@ class SimulationRequest(BaseModel):
 
 class MatchSimulator:
     """Monte Carlo engine for match projection."""
+
     def project_future(self, current_state: Dict, num_sims: int, overs: int, policy: str):
         results = []
         for _ in range(num_sims):
             temp_runs, temp_wickets = 0, 0
             for _ in range(overs * 6):
                 if policy == "aggressive":
-                    outcome = random.choices([0,1,2,4,6,'W'], weights=[35,20,10,15,10,10])[0]
+                    outcome = random.choices([0, 1, 2, 4, 6, "W"], weights=[35, 20, 10, 15, 10, 10])[0]
                 else:
-                    outcome = random.choices([0,1,2,4,6,'W'], weights=[50,25,10,5,5,5])[0]
-                if outcome == 'W':
+                    outcome = random.choices([0, 1, 2, 4, 6, "W"], weights=[50, 25, 10, 5, 5, 5])[0]
+                if outcome == "W":
                     temp_wickets += 1
-                    if temp_wickets + current_state.get('total_wickets', 0) >= 10:
+                    if temp_wickets + current_state.get("total_wickets", 0) >= 10:
                         break
                 else:
                     temp_runs += outcome
@@ -256,96 +266,101 @@ class MatchSimulator:
         return {
             "projected_runs_avg": float(np.mean(runs_dist)),
             "projected_wickets_avg": float(np.mean([w for r, w in results])),
-            "confidence_interval": [float(np.percentile(runs_dist, 5)), float(np.percentile(runs_dist, 95))]
+            "confidence_interval": [float(np.percentile(runs_dist, 5)), float(np.percentile(runs_dist, 95))],
         }
+
 
 match_sim = MatchSimulator()
 
 
-# ─── Helper: Get Redis client safely ─────────────────────────────────────────
-def get_redis() -> Optional[redis.Redis]:
-    """Get a Redis client or None if unavailable."""
-    try:
-        pool = getattr(app.state, 'redis_pool', None)
-        if pool:
-            r = redis.Redis(connection_pool=pool)
-            r.ping()
-            return r
-    except Exception:
-        pass
-    return None
+# ═══════════════════════════════════════════════════════════════════════════════
+# Background Match Discovery
+# ═══════════════════════════════════════════════════════════════════════════════
 
-
-# ─── Background Match Discovery ──────────────────────────────────────────────
 async def run_discovery_loop(app: FastAPI):
-    """Periodically scan for live IPL matches and inject static schedule if empty."""
-    await asyncio.sleep(5)  # Let startup finish
+    """Periodically discover live IPL matches using the 5-source waterfall."""
+    await asyncio.sleep(3)  # Let startup finish
+
     while True:
         try:
-            r = get_redis()
-            if not r:
-                await asyncio.sleep(60)
-                continue
+            fetcher = get_fetcher()
+            all_matches = await fetcher.discover_matches()
+            live_matches = [m for m in all_matches if m.get("status") == "live"]
 
-            from backend.data_pipeline.cricbuzz_api import CricbuzzAPI
-            matches = await CricbuzzAPI.get_live_matches()
-            
-            # Injection: Always ensure next 5 matches from static schedule are in Redis
-            try:
-                from backend.data_pipeline.match_discovery import MatchDiscoveryService
-                service = MatchDiscoveryService()
-                upcoming = service._get_local_schedule()
-                for match in upcoming[:5]:
-                    m_key = f"active:match:{match['match_id']}"
-                    if not r.exists(m_key):
-                        match['status'] = 'scheduled'
-                        r.hset(m_key, mapping=match)
-                        r.expire(m_key, 86400) # 24 hours for scheduled
-            except Exception as e:
-                logger.warning(f"Static schedule injection failed: {e}")
+            if live_matches:
+                logger.info(
+                    f"🔎 Discovery: {len(live_matches)} live matches "
+                    f"(source: {fetcher.last_source_used})"
+                )
+                # Start scrapers for live matches if Redis available
+                r = get_redis()
+                for m in live_matches:
+                    m_id = m.get("match_id", "")
+                    if m_id and m_id not in active_scrapers and r:
+                        try:
+                            from backend.data_pipeline.espn_scraper import ESPNCricinfoScraper
+                            scraper = ESPNCricinfoScraper()
+                            url = m.get("url", "")
+                            if url:
+                                task = asyncio.create_task(scraper.start_polling(m_id, url))
+                                active_scrapers[m_id] = task
+                                logger.info(f"🔥 Auto-started scraper for: {m.get('teams', m_id)}")
+                        except Exception as scraper_err:
+                            logger.warning(f"Scraper start failed for {m_id}: {scraper_err}")
 
-            if matches:
-                logger.info(f"🔎 Discovery scan: {len(matches)} live IPL matches found")
+            # Adaptive polling: faster when live, slower when idle
+            sleep_time = 120 if live_matches else settings.DISCOVERY_POLL_INTERVAL
 
-            for m in matches:
-                m_id = m['match_id']
-                m_key = f"active:match:{m_id}"
-                
-                # Check for live scraper
-                if m_id not in active_scrapers:
-                    logger.info(f"🔥 Auto-starting scraper for: {m.get('teams', m_id)}")
-                    try:
-                        from backend.data_pipeline.espn_scraper import ESPNCricinfoScraper
-                        scraper = ESPNCricinfoScraper()
-                        task = asyncio.create_task(scraper.start_polling(m_id, m['url']))
-                        active_scrapers[m_id] = task
-                        
-                        # Mark as live in Redis
-                        m['status'] = 'live'
-                        r.hset(m_key, mapping=m)
-                    except Exception as scraper_err:
-                        logger.error(f"Failed to start scraper for {m_id}: {scraper_err}")
+            # Prune dead scrapers (BUG 5 FIX)
+            dead_scrapers = [m_id for m_id, task in active_scrapers.items() if task.done()]
+            for m_id in dead_scrapers:
+                del active_scrapers[m_id]
+                logger.debug(f"🧹 Cleaned up finished scraper task for {m_id}")
 
+            # If no live matches, check if next match is soon
+            if not live_matches:
+                upcoming = [m for m in all_matches if m.get("status") == "scheduled"]
+                upcoming.sort(key=lambda m: m.get("start_epoch", 0) or float("inf"))
+                if upcoming:
+                    next_epoch = upcoming[0].get("start_epoch", 0)
+                    if next_epoch > 0:
+                        time_until = next_epoch - time.time()
+                        if time_until > 0 and time_until < 1800:
+                            sleep_time = 60  # Within 30 min, poll every minute
+                        elif time_until > 3600:
+                            sleep_time = min(time_until - 600, 3600)  # Sleep up to 1 hour
+
+            await asyncio.sleep(sleep_time)
+
+        except asyncio.CancelledError:
+            logger.info("Discovery loop cancelled")
+            return
         except Exception as e:
             logger.error(f"Discovery loop error: {e}")
+            await asyncio.sleep(settings.DISCOVERY_POLL_INTERVAL)
 
-        await asyncio.sleep(settings.DISCOVERY_POLL_INTERVAL)
 
-
-# ─── Routes ──────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════════
+# Routes
+# ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/")
 async def serve_dashboard():
     return FileResponse("backend/static/index.html")
 
+
 @app.get("/pro")
 async def serve_pro():
-    return FileResponse("backend/static/index.html")  # Unified dashboard
+    return FileResponse("backend/static/index.html")
 
+
+# ── Health Endpoint ──────────────────────────────────────────────────────────
 
 @app.get("/health")
 async def health_check():
     r = get_redis()
+    fetcher = get_fetcher()
+    health = fetcher.get_source_health()
     return {
         "status": "healthy" if predictor else "degraded",
         "timestamp": time.time(),
@@ -355,109 +370,199 @@ async def health_check():
             "database": "connected" if db_manager else "unavailable",
             "betting_engine": "loaded" if betting_engine else "unavailable",
             "active_scrapers": len(active_scrapers),
-        }
+            "data_sources": f"{health['active_sources']}/{health['total_sources']} active",
+        },
     }
 
 
-
+# ── Matches Endpoint (THE CORE — NEVER EMPTY) ───────────────────────────────
 
 @app.get("/matches")
 async def list_matches():
-    """List all matches (Local Memory Cache + Redis Fallback)."""
-    # 1. Start with the pre-loaded static schedule
-    merged_matches = list(GLOBAL_MATCH_CACHE.values())
-    
-    # 2. Try to add live data from Redis if available
+    """
+    List all matches. Uses the 5-source waterfall pipeline.
+    GUARANTEE: This endpoint NEVER returns an empty list.
+    """
+    fetcher = get_fetcher()
+    matches = await fetcher.discover_matches()
+
+    # Enrich with live data from Redis if available
     r = get_redis()
     if r:
         try:
             keys = r.keys("active:match:*")
             for key in keys:
-                m_id = key.split(":")[-1]
                 data = r.hgetall(key)
-                
-                # Update or insert live match
-                match_entry = {
-                    "match_id": str(m_id),
-                    "teams": data.get('teams', '').split(' vs ') if isinstance(data.get('teams'), str) else ["TBD", "TBD"],
-                    "status": data.get('status', 'live'),
-                    "score": "0/0",
-                    "over": 0.0,
-                    "win_probability": 0.5
-                }
+                if not data:
+                    continue
+                m_id = data.get("match_id", key.split(":")[-1])
+                teams_str = data.get("teams", "")
 
-                if match_entry["status"] == 'live':
-                    try:
-                        last_ball = r.xrevrange(f"ipl:balls:{m_id}", count=1)
-                        if last_ball:
-                            b_data = last_ball[0][1]
-                            match_entry["score"] = f"{b_data.get('runs', 0)}/{b_data.get('wicket', 0)}"
-                            match_entry["over"] = float(b_data.get('over', 0.0))
-                    except Exception: pass
+                # Find matching entry in our results
+                match_updated = False
+                for i, m in enumerate(matches):
+                    m_teams_str = " vs ".join(m.get("teams", []))
+                    if m.get("match_id") == m_id or m_teams_str == teams_str:
+                        # Update with live Redis data
+                        if data.get("status") == "live":
+                            matches[i]["status"] = "live"
+                        if data.get("score") and data.get("score") != "—":
+                            matches[i]["score"] = data["score"]
+                        if data.get("over") and data.get("over") != "0.0":
+                            try:
+                                matches[i]["over"] = float(data["over"])
+                            except ValueError:
+                                pass
+                        match_updated = True
+                        break
 
-                # Deduplicate and prioritize live entries over static
-                idx = -1
-                for i, existing in enumerate(merged_matches):
-                    if existing["match_id"] == match_entry["match_id"] or existing["teams"] == match_entry["teams"]:
-                        idx = i; break
-                if idx != -1: merged_matches[idx] = match_entry
-                else: merged_matches.append(match_entry)
-
+                if not match_updated and teams_str:
+                    # New match from Redis not in our list
+                    teams_list = teams_str.split(" vs ")
+                    matches.append({
+                        "match_id": m_id,
+                        "teams": teams_list if len(teams_list) == 2 else ["TBD", "TBD"],
+                        "team_short": [],
+                        "status": data.get("status", "live"),
+                        "score": data.get("score", "—"),
+                        "over": float(data.get("over", 0.0)),
+                        "venue": data.get("venue", "TBD"),
+                        "win_probability": 0.5,
+                        "source": "redis",
+                    })
         except Exception as e:
-            logger.error(f"Redis match merge error: {e}")
+            logger.warning(f"Redis merge (non-critical): {e}")
 
-    # 3. Add Win Probabilities (Pre-match or In-memory live)
+    # Enrich with ML predictions
     if predictor:
-        for m in merged_matches:
-            if m.get("win_probability") == 0.5:
+        for m in matches:
+            if m.get("win_probability") == 0.5 and len(m.get("teams", [])) == 2:
                 try:
-                    pred = predictor.model.predict_pre_match(m["teams"][0], m["teams"][1], m.get("venue", "Unknown"))
+                    pred = predictor.model.predict_pre_match(
+                        m["teams"][0], m["teams"][1], m.get("venue", "Unknown")
+                    )
                     m["win_probability"] = float(pred.get("win_probability", 0.5))
-                except Exception: pass
-                
-    return merged_matches
+                except Exception:
+                    pass
+
+    return matches
+
+
+# ── Data Health Endpoint ─────────────────────────────────────────────────────
+
+@app.get("/api/data-health")
+async def data_health():
+    """Return real-time status of all 5 data sources (for the status bar UI)."""
+    fetcher = get_fetcher()
+    health = fetcher.get_source_health()
+    r = get_redis()
+    health["redis_connected"] = r is not None
+    health["ml_engine_loaded"] = predictor is not None
+    health["server_uptime"] = time.time()
+    return health
+
+
+# ── Offline Sync Endpoint ────────────────────────────────────────────────────
+
+@app.get("/api/offline-sync")
+async def offline_sync():
+    """
+    Returns the complete 2026 IPL schedule + points table for offline mode.
+    The frontend can cache this in localStorage for zero-internet operation.
+    """
+    # Try loading the full schedule.json
+    json_paths = [
+        os.path.join(os.path.dirname(__file__), "data_pipeline", "schedule.json"),
+        os.path.join(os.getcwd(), "backend", "data_pipeline", "schedule.json"),
+    ]
+    for p in json_paths:
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception as e:
+                logger.warning(f"schedule.json parse error: {e}")
+
+    # Fallback: build from fetcher
+    fetcher = get_fetcher()
+    schedule = fetcher.get_static_schedule()
+    return {
+        "season": "IPL 2026",
+        "total_matches": len(schedule),
+        "schedule": schedule,
+        "points_table": _get_points_table(),
+    }
+
+
+# ── Upcoming Matches ─────────────────────────────────────────────────────────
+
+@app.get("/upcoming/{season}")
+async def get_upcoming_matches(season: str):
+    """Fetch upcoming schedule from the MultiSourceFetcher."""
+    fetcher = get_fetcher()
+    upcoming = await fetcher.get_upcoming(limit=20)
+    return {"matchschedule": upcoming}
+
+
+# ── Points Table ─────────────────────────────────────────────────────────────
+
+@app.get("/points/{season}")
+async def get_points_table(season: str):
+    """Fetch Points Table. Returns base template for 2026."""
+    return {"points": _get_points_table()}
+
+
+def _get_points_table() -> List[Dict]:
+    """Generate the 10-team points table."""
+    teams = [
+        ("Chennai Super Kings", "CSK"),
+        ("Delhi Capitals", "DC"),
+        ("Gujarat Titans", "GT"),
+        ("Kolkata Knight Riders", "KKR"),
+        ("Lucknow Super Giants", "LSG"),
+        ("Mumbai Indians", "MI"),
+        ("Punjab Kings", "PBKS"),
+        ("Rajasthan Royals", "RR"),
+        ("Royal Challengers Bengaluru", "RCB"),
+        ("Sunrisers Hyderabad", "SRH"),
+    ]
+    return [
+        {
+            "name": name,
+            "teamshortname": short,
+            "matchesplayed": 0,
+            "matcheswon": 0,
+            "matcheslost": 0,
+            "nr": 0,
+            "points": 0,
+            "nrr": "+0.000",
+        }
+        for name, short in teams
+    ]
+
+
+# ── Debug Endpoint ───────────────────────────────────────────────────────────
 
 @app.get("/debug/env")
 async def debug_env():
     """Diagnostics for production filesystem and memory."""
     import sys
+    fetcher = get_fetcher()
+    health = fetcher.get_source_health()
     return {
         "cwd": os.getcwd(),
         "file": __file__,
-        "sys_path": sys.path,
-        "cache_size": len(GLOBAL_MATCH_CACHE),
-        "cache_keys": list(GLOBAL_MATCH_CACHE.keys())[:10]
+        "sys_path": sys.path[:5],
+        "fetcher_cache_size": health["cache_size"],
+        "static_schedule_count": len(fetcher.get_static_schedule()),
+        "active_sources": f"{health['active_sources']}/{health['total_sources']}",
+        "last_source": health["last_source_used"],
     }
 
-# ─── Module Level Initialization ─────────────────────────────────────────────
-load_static_schedule_to_cache()
 
-
-@app.get("/upcoming/{season}")
-async def get_upcoming_matches(season: str):
-    """Fetch upcoming schedule dynamically from the cached matches."""
-    # Return matches from GLOBAL_MATCH_CACHE that match the 'scheduled' status
-    upcoming = [m for m in GLOBAL_MATCH_CACHE.values() if m.get('status') == 'scheduled']
-    return {"matchschedule": upcoming}
-
-@app.get("/points/{season}")
-async def get_points_table(season: str):
-    """Fetch Points Table. For now, returns a base template for 2026."""
-    teams = [
-        {"name": "Chennai Super Kings", "teamshortname": "CSK", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Delhi Capitals", "teamshortname": "DC", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Gujarat Titans", "teamshortname": "GT", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Kolkata Knight Riders", "teamshortname": "KKR", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Lucknow Super Giants", "teamshortname": "LSG", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Mumbai Indians", "teamshortname": "MI", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Punjab Kings", "teamshortname": "PBKS", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Rajasthan Royals", "teamshortname": "RR", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Royal Challengers Bengaluru", "teamshortname": "RCB", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-        {"name": "Sunrisers Hyderabad", "teamshortname": "SRH", "matchesplayed": 0, "matcheswon": 0, "matcheslost": 0, "points": 0, "nrr": "+0.00"},
-    ]
-    return {"points": teams}
-
-
+# ═══════════════════════════════════════════════════════════════════════════════
+# Prediction & Simulation Routes (Preserved from v2)
+# ═══════════════════════════════════════════════════════════════════════════════
 
 @app.get("/predict/{match_id}")
 async def get_prediction(match_id: str):
@@ -469,17 +574,16 @@ async def get_prediction(match_id: str):
         if "error" in prediction:
             raise HTTPException(status_code=404, detail=prediction["error"])
 
-        # ── Enrich with Scenario Simulator ──────────────────────────────────
+        # ── Enrich with Scenario Simulator ───────────────────────────────────
         scenario_sim = get_scenario_sim()
         if scenario_sim:
             try:
                 scenario = scenario_sim.simulate_remaining_balls(
                     current_state=prediction, n_simulations=2000
                 )
-                prediction['scenario'] = scenario
-                # Surface key milestones at top level for the frontend
-                prediction['prob_180_plus'] = scenario.get('prob_180_plus', 0.0)
-                prediction['projected_score_p90'] = scenario.get('p90_score', 0.0)
+                prediction["scenario"] = scenario
+                prediction["prob_180_plus"] = scenario.get("prob_180_plus", 0.0)
+                prediction["projected_score_p90"] = scenario.get("p90_score", 0.0)
             except Exception as sim_err:
                 logger.warning(f"Scenario simulator skipped: {sim_err}")
 
@@ -500,11 +604,11 @@ async def get_prediction(match_id: str):
                 last_ball = r.xrevrange(f"ipl:balls:{match_id}", count=1)
                 if last_ball:
                     d = last_ball[0][1]
-                    teams = [d.get('batting_team', 'Team A'), d.get('bowling_team', 'Team B')]
+                    teams = [d.get("batting_team", "Team A"), d.get("bowling_team", "Team B")]
 
             odds_data = betting_engine.generate_match_odds(prediction, teams[0], teams[1], match_id)
-            prediction['betting'] = odds_data.to_dict()
-            prediction['model_accuracy'] = odds_data.model_accuracy
+            prediction["betting"] = odds_data.to_dict()
+            prediction["model_accuracy"] = odds_data.model_accuracy
 
         # ── Persist asynchronously ───────────────────────────────────────────
         if db_manager:
@@ -523,7 +627,7 @@ async def run_scenario_simulation(match_id: str, n: int = 5000):
     """Run detailed Monte Carlo scenario simulation for remaining balls."""
     r = get_redis()
     if not r:
-        raise HTTPException(status_code=503, detail="Redis unavailable")
+        raise HTTPException(status_code=503, detail="Redis unavailable for live data")
 
     last_ball = r.xrevrange(f"ipl:balls:{match_id}", count=1)
     if not last_ball:
@@ -531,9 +635,9 @@ async def run_scenario_simulation(match_id: str, n: int = 5000):
 
     d = last_ball[0][1]
     current_state = {
-        'total_runs': int(d.get('total_runs', 0) or 0),
-        'total_wickets': int(d.get('total_wickets', 0) or 0),
-        'balls_remaining': max(0, 120 - int(float(d.get('over', 0)) * 6)),
+        "total_runs": int(d.get("total_runs", 0) or 0),
+        "total_wickets": int(d.get("total_wickets", 0) or 0),
+        "balls_remaining": max(0, 120 - int(float(d.get("over", 0)) * 6)),
     }
 
     sim = get_scenario_sim()
@@ -545,7 +649,7 @@ async def run_scenario_simulation(match_id: str, n: int = 5000):
 
 
 @app.get("/fantasy/{player_name}")
-async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role: str = 'batsman'):
+async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role: str = "batsman"):
     """Get Bayesian fantasy points projection for a player."""
     try:
         from backend.ml_engine.simulators import BayesianPlayerPredictor, FantasyEngine
@@ -554,16 +658,14 @@ async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role:
         normalizer = CricsheetNormalizer()
         normalizer.load_player_stats()
 
-        # Fetch historical stats from player_stats_db if available
         bat_history, wkt_history = [], []
         if normalizer.player_stats:
-            bat_data = normalizer.player_stats.get('batsmen', {}).get(player_name, {})
-            bowl_data = normalizer.player_stats.get('bowlers', {}).get(player_name, {})
-            # Simulate last-5 form from season average
-            if bat_data.get('average'):
-                avg = bat_data['average']
+            bat_data = normalizer.player_stats.get("batsmen", {}).get(player_name, {})
+            bowl_data = normalizer.player_stats.get("bowlers", {}).get(player_name, {})
+            if bat_data.get("average"):
+                avg = bat_data["average"]
                 bat_history = [max(0, avg + np.random.normal(0, avg * 0.3)) for _ in range(5)]
-            if bowl_data.get('average'):
+            if bowl_data.get("average"):
                 wkt_history = [max(0, np.random.normal(1.2, 0.5)) for _ in range(5)]
 
         predictor_b = BayesianPlayerPredictor()
@@ -575,7 +677,7 @@ async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role:
         fantasy_pts = fantasy.calculate_expected_points(
             player_projection=projection,
             role=role,
-            ownership_pct=float(ownership)
+            ownership_pct=float(ownership),
         )
 
         return {
@@ -584,7 +686,7 @@ async def get_fantasy_projection(player_name: str, ownership: float = 0.5, role:
             "ownership_pct": round(ownership * 100, 1),
             "batting_projection": run_proj,
             "bowling_projection": wkt_proj,
-            "fantasy": fantasy_pts
+            "fantasy": fantasy_pts,
         }
     except Exception as e:
         logger.error(f"Fantasy projection error: {e}")
@@ -604,6 +706,10 @@ async def run_what_if_simulation(match_id: str, request: SimulationRequest):
     return {"match_id": match_id, "current_state": prediction, "projection": projection}
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# WebSocket
+# ═══════════════════════════════════════════════════════════════════════════════
+
 @app.websocket("/ws/predictions/{match_id}")
 async def websocket_prediction(websocket: WebSocket, match_id: str):
     """Real-time prediction stream via WebSocket."""
@@ -621,7 +727,7 @@ async def websocket_prediction(websocket: WebSocket, match_id: str):
         if predictor:
             try:
                 initial = predictor.predict_live_match(match_id)
-                if 'error' not in initial:
+                if "error" not in initial:
                     swarm = get_agent_swarm()
                     if swarm:
                         initial.update(swarm.simulate(initial))
@@ -634,7 +740,7 @@ async def websocket_prediction(websocket: WebSocket, match_id: str):
                 message = pubsub.get_message(ignore_subscribe_messages=True)
                 if message:
                     try:
-                        data = json.loads(message['data'])
+                        data = json.loads(message["data"])
                         await websocket.send_json(data)
                     except (json.JSONDecodeError, TypeError):
                         pass

@@ -74,9 +74,25 @@ IST_TZ = timezone(IST_OFFSET)
 MATCH_DURATION_SECONDS = 4 * 3600  # 14400s = 4 hours
 
 
+def is_ipl_team(team_name: str) -> bool:
+    """Check if a team name or substring belongs to the official IPL 2026 list."""
+    if not team_name: return False
+    tn = team_name.lower()
+    # Check against shortnames and primary names
+    for full, short in TEAM_SHORTNAMES.items():
+        if short.lower() in tn or full.lower() in tn:
+            return True
+    return False
+
+def is_ipl_match(t1: str, t2: str) -> bool:
+    """Sovereign Shield: Both teams must be official IPL teams."""
+    return is_ipl_team(t1) and is_ipl_team(t2)
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Dynamic Status Computation (FIX for BUG-1)
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def compute_match_status(start_epoch: float) -> str:
     """
@@ -764,6 +780,31 @@ class MultiSourceFetcher:
 
         merged.sort(key=sort_key)
         return merged
+
+    def _merge_results(self, existing: List[Dict[str, Any]], new: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Merge new matches into existing list with deduplication.
+        v4.7 AUDIT: Enforce SOVEREIGN ISOLATION during merge.
+        """
+        merged = {m["match_id"]: m for m in existing}
+        for n in new:
+            # 1. Sovereign Shield: MUST be an IPL match
+            t1, t2 = n.get("teams", ["", ""])
+            if not is_ipl_match(t1, t2):
+                continue
+            
+            # 2. Enrichment or insertion
+            if n["match_id"] in merged:
+                # Update scores/overs for existing match
+                merged[n["match_id"]].update({
+                    "score": n.get("score", merged[n["match_id"]].get("score")),
+                    "over": n.get("over", merged[n["match_id"]].get("over")),
+                    "status": n.get("status", merged[n["match_id"]].get("status")),
+                    "source": n.get("source", merged[n["match_id"]].get("source")),
+                })
+            else:
+                merged[n["match_id"]] = n
+        return list(merged.values())
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

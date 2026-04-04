@@ -1211,19 +1211,23 @@ class RealTimePredictor:
             
             if not last_ball:
                 # Fallback: Check if it's an upcoming match from the schedule
-                logger.info(f"ℹ️ No live data for {match_id}. Checking schedule for pre-match prediction...")
+                logger.info(f"ℹ️ No live data for {match_id}. Checking Sovereign Schedule for pre-match prediction...")
                 
-                from backend.data_pipeline.match_discovery import MatchDiscoveryService
-                discovery = MatchDiscoveryService()
-                upcoming = discovery._get_local_schedule()
+                try:
+                    from backend.data_pipeline.multi_source_fetcher import get_fetcher
+                    fetcher = get_fetcher()
+                    schedule = fetcher.get_static_schedule()
+                    
+                    match_info = next((m for m in schedule if m['match_id'] == match_id), None)
+                    if match_info:
+                        t1, t2 = match_info.get('teams', ['Unknown', 'Unknown'])
+                        venue = match_info.get('venue', 'Standard IPL Venue')
+                        # Returning Titan v4.3 Sovereign Pre-Match Verdict
+                        return self.model.predict_pre_match(t1, t2, venue)
+                except Exception as sched_err:
+                    logger.warning(f"Sovereign schedule fallback failed: {sched_err}")
                 
-                match_info = next((m for m in upcoming if m['match_id'] == match_id), None)
-                if match_info:
-                    teams = match_info['teams'].split(' vs ')
-                    if len(teams) == 2:
-                        return self.model.predict_pre_match(teams[0], teams[1], "Standard IPL Venue")
-                
-                return {"error": "Match not active and no schedule info found."}
+                return {"error": f"Match {match_id} not active and no schedule info found."}
 
             # ── Existing Live Prediction Logic ──────────────────────────────
             ball_data = last_ball[0][1]

@@ -1111,8 +1111,12 @@ class RealTimePredictor:
             forensic_notes = []
             
             if dna_context:
-                # Venue edge
-                venue_mod = dna_context.get('venue_edge', {}).get(t1, 0) - dna_context.get('venue_edge', {}).get(t2, 0)
+                # Venue edge (returned as a float from ContextualAuditor)
+                venue_edge_raw = dna_context.get('venue_edge', 0)
+                if isinstance(venue_edge_raw, dict):
+                    venue_mod = venue_edge_raw.get(t1, 0) - venue_edge_raw.get(t2, 0)
+                else:
+                    venue_mod = float(venue_edge_raw)
                 dna_modifier += venue_mod * 0.1 # 10% weight to venue DNA
                 if abs(venue_mod) > 0.1:
                     forensic_notes.append(f"Venue DNA: {t1 if venue_mod > 0 else t2} holds +{abs(venue_mod)*100:.0f}% edge.")

@@ -82,10 +82,25 @@ def is_ipl_team(team_name: str) -> bool:
     """Check if a team name or substring belongs to the official IPL 2026 list."""
     if not team_name: return False
     tn = team_name.lower()
-    # Check against shortnames and primary names
-    for full, short in TEAM_SHORTNAMES.items():
-        if short.lower() in tn or full.lower() in tn:
+    
+    # Official keywords to prevent "County Championship" pollution
+    ipl_keywords = [
+        "csk", "chennai", "super kings",
+        "mi", "mumbai", "indians",
+        "rcb", "bangalore", "bengaluru", "challengers",
+        "kkr", "kolkata", "knight riders",
+        "srh", "sunrisers", "hyderabad",
+        "rr", "rajasthan", "royals",
+        "dc", "delhi", "capitals",
+        "pbks", "punjab",
+        "gt", "gujarat", "titans",
+        "lsg", "lucknow", "super giants"
+    ]
+    
+    for k in ipl_keywords:
+        if k in tn:
             return True
+            
     return False
 
 def is_ipl_match(t1: str, t2: str) -> bool:
@@ -455,13 +470,17 @@ class MultiSourceFetcher:
         fetched_results = await asyncio.gather(*tasks, return_exceptions=True)
         for fr in fetched_results:
             if isinstance(fr, list) and fr:
-                results = self._merge_results(results, fr)
+                # STRICT SHIELD: Filter out any non-IPL teams
+                ipl_matches = [m for m in fr if is_ipl_match(m.get('teams', [''])[0], m.get('teams', ['', ''])[1])]
+                results = self._merge_results(results, ipl_matches)
 
         # Waterfall Fallback if APIs fail
         if not results and self.breakers["jina"].is_available():
             # Jina falls back sequentially
             md = await self._fetch_jina_fallback()
-            if md: results = self._merge_results(results, md)
+            if md: 
+                ipl_md = [m for m in md if is_ipl_match(m.get('teams', [''])[0], m.get('teams', ['', ''])[1])]
+                results = self._merge_results(results, ipl_md)
 
         # Merge with schedule for full coverage
         if not results:

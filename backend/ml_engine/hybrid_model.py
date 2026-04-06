@@ -860,6 +860,151 @@ class HybridEnsemble:
             "status": "SOVEREIGN_SYSTEM_AUDIT"
         }
 
+    def get_shap_factors(self, p1: float, p2: float, p3: float, context: Optional[Dict]) -> List[Dict]:
+        """
+        Generate statistical SHAP factors (feature importance) for the prediction.
+        """
+        if not context:
+            return [{"factor": "Baseline Market", "impact": 0.05}]
+        
+        crr = context.get('crr', 8.0)
+        wickets = context.get('total_wickets', 0)
+        balls_rem = context.get('balls_remaining', 120)
+        
+        factors = []
+        rr_impact = (crr - 7.5) / 10.0
+        factors.append({"factor": "Run Rate Intensity", "impact": round(rr_impact, 2)})
+        
+        w_impact = -(wickets / 10.0) * (1.0 - (balls_rem / 120.0))
+        factors.append({"factor": "Wicket Loss Pressure", "impact": round(w_impact, 2)})
+        
+        phase_impact = 0.05 if balls_rem < 30 else -0.02
+        factors.append({"factor": "Death Over Volatility", "impact": phase_impact})
+        
+        static_impact = (p1 - 0.5) * 0.4
+        factors.append({"factor": "Pre-Match Team Strength", "impact": round(static_impact, 2)})
+        
+        return sorted(factors, key=lambda x: abs(x['impact']), reverse=True)[:4]
+
+    def predict_pre_match(self, batting_team: str, bowling_team: str, venue: str) -> Dict:
+        """High-level pre-match prediction using only static features."""
+        normalizer = CricsheetNormalizer()
+        n_bat = normalizer.normalize_team(batting_team)
+        n_bowl = normalizer.normalize_team(bowling_team)
+        
+        bat_elo = 1500.0
+        bowl_elo = 1500.0
+        
+        for d in sorted(normalizer.elo_lookup.keys(), reverse=True):
+            if n_bat in normalizer.elo_lookup[d]:
+                bat_elo = normalizer.elo_lookup[d][n_bat]
+            if n_bowl in normalizer.elo_lookup[d]:
+                bowl_elo = normalizer.elo_lookup[d][n_bowl]
+            if bat_elo != 1500.0 and bowl_elo != 1500.0:
+                break
+
+        static_features = {
+            'inning': 1, 'over': 0.0, 'total_runs': 0, 'total_wickets': 0,
+            'crr': 0.0, 'runs_last_6': 0, 'wickets_last_6': 0,
+            'boundary_rate': 0.1, 'dot_pressure': 0.4,
+            'balls_remaining': 120,
+            'bat_sr': 130.0, 'bat_avg': 25.0, 'bat_bp': 12.0,
+            'bowl_econ': 8.5, 'bowl_sr': 20.0, 'bowl_avg': 28.0,
+            'temp': 28.0, 'humidity': 55.0, 'dew': 18.0,
+            'bat_elo': bat_elo, 'bowl_elo': bowl_elo,
+            'elo_diff': bat_elo - bowl_elo
+        }
+
+        X_static = pd.DataFrame([static_features])
+        col_order = ['inning', 'over', 'total_runs', 'total_wickets', 'crr', 'runs_last_6', 'wickets_last_6', 'boundary_rate', 'dot_pressure', 'balls_remaining', 'bat_sr', 'bat_avg', 'bat_bp', 'bowl_econ', 'bowl_sr', 'bowl_avg', 'temp', 'humidity', 'dew', 'bat_elo', 'bowl_elo', 'elo_diff']
+        X_static = X_static[col_order]
+        
+        try:
+            X_static_scaled = self.static_scaler.transform(X_static) if hasattr(self, 'static_scaler') else X_static
+        except:
+            X_static_scaled = X_static
+
+        if self.static_model:
+            try:
+                probs = self.static_model.predict_proba(X_static_scaled)[0]
+                win_prob = float(probs[1]) if len(probs) > 1 else 0.5
+            except:
+                win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+        else:
+            win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+
+        return {
+            'win_probability': max(0.05, min(0.95, win_prob)),
+            'batting_team': batting_team,
+            'bowling_team': bowling_team,
+            'venue': venue,
+            'confidence': 0.6,
+            'status': "PRE_MATCH_PREDICTION"
+        }
+
+    def save_models(self, path_prefix: str):
+        """Save all models and scalers"""
+        if self.static_model:
+            with open(f"{path_prefix}_static_ensemble.pkl", "wb") as f:
+                pickle.dump(self.static_model, f)
+        elif self.base_xgb:
+            self.base_xgb.save_model(f"{path_prefix}_xgb.json")
+        
+        torch.save(self.lstm_model.state_dict(), f"{path_prefix}_lstm.pth")
+        with open(f"{path_prefix}_scalers.pkl", 'wb') as f:
+            pickle.dump({'static': self.static_scaler, 'lstm': self.lstm_scaler}, f)
+        logger.info(f"Models saved to {path_prefix}")
+
+    def save_to_hub(self, repo_id: str, path_prefix: str, commit_message: str = "Update IPL models"):
+        """Upload models to Hugging Face Hub"""
+        self.save_models(path_prefix)
+        api = HfApi()
+        for suffix in ["_xgb.json", "_lstm.pth", "_scalers.pkl"]:
+            file_path = f"{path_prefix}{suffix}"
+            if os.path.exists(file_path):
+                api.upload_file(path_or_fileobj=file_path, path_in_repo=os.path.basename(file_path), repo_id=repo_id, commit_message=commit_message)
+
+    def load_from_hub(self, repo_id: str, path_prefix: str):
+        """Download and load models from Hub"""
+        for suffix in ["_xgb.json", "_lstm.pth", "_scalers.pkl"]:
+            filename = f"models/{os.path.basename(path_prefix)}{suffix}"
+            local_path = hf_hub_download(repo_id=repo_id, filename=filename)
+            shutil.copy2(local_path, f"{path_prefix}{suffix}")
+        self.load_models(path_prefix)
+
+    def load_models(self, path_prefix: str):
+        """Load all models and scalers"""
+        try:
+            with open(f"{path_prefix}_static_ensemble.pkl", "rb") as f:
+                self.static_model = pickle.load(f)
+        except:
+            self.base_xgb = xgb.XGBClassifier()
+            try:
+                self.base_xgb.load_model(f"{path_prefix}_xgb.json")
+            except:
+                logger.warning("No static model found.")
+            
+            class DummyCalibrated:
+                def __init__(self, m): self.m = m
+                def predict_proba(self, X): return self.m.predict_proba(X)
+            self.static_model = DummyCalibrated(self.base_xgb)
+        
+        self.lstm_model = self.build_lstm_model()
+        try:
+            self.lstm_model.load_state_dict(torch.load(f"{path_prefix}_lstm.pth", map_location=self.device))
+        except:
+            logger.warning("No LSTM weights found.")
+        self.lstm_model.eval()
+        
+        try:
+            with open(f"{path_prefix}_scalers.pkl", 'rb') as f:
+                scalers = joblib.load(f)
+                self.static_scaler = scalers['static']
+                self.lstm_scaler = scalers['lstm']
+        except:
+            logger.warning("No scalers found.")
+        logger.info(f"Models loaded from {path_prefix}")
+
 class HeuristicAuditor:
     """Titan v4.3 Sovereign Oracle - Logic Kernels for forensic explainability."""
     
@@ -894,41 +1039,6 @@ class HeuristicAuditor:
             
         return trace
 
-    def get_shap_factors(self, p1: float, p2: float, p3: float, context: Optional[Dict]) -> List[Dict]:
-        """
-        Generate statistical SHAP factors (feature importance) for the prediction.
-        A resultant vector analysis of what influenced the 70% win chance.
-        """
-        if not context:
-            return [{"factor": "Baseline Market", "impact": 0.05}]
-        
-        # Calculate impacts based on key IPL dynamics
-        crr = context.get('crr', 8.0)
-        wickets = context.get('total_wickets', 0)
-        balls_rem = context.get('balls_remaining', 120)
-        
-        # Heuristic/Statistical SHAP logic (Physics Vector equivalent)
-        factors = []
-        
-        # 1. Run Rate Momentum
-        rr_impact = (crr - 7.5) / 10.0
-        factors.append({"factor": "Run Rate Intensity", "impact": round(rr_impact, 2)})
-        
-        # 2. Scoreboard Pressure (Wickets)
-        w_impact = -(wickets / 10.0) * (1.0 - (balls_rem / 120.0))
-        factors.append({"factor": "Wicket Loss Pressure", "impact": round(w_impact, 2)})
-        
-        # 3. Match Phase (Balls remaining)
-        phase_impact = 0.05 if balls_rem < 30 else -0.02
-        factors.append({"factor": "Death Over Volatility", "impact": phase_impact})
-        
-        # 4. Model Context (Static Strength)
-        static_impact = (p1 - 0.5) * 0.4
-        factors.append({"factor": "Pre-Match Team Strength", "impact": round(static_impact, 2)})
-        
-        # Sort by absolute impact and return top 4
-        return sorted(factors, key=lambda x: abs(x['impact']), reverse=True)[:4]
-
     def lite_predict(self, batting_team: str, bowling_team: str, crr: float, wickets: int, balls_rem: int) -> Dict:
         """Lite ML fallback if RAM is constrained but Titan UI needs data."""
         # Simple logistic baseline derived from 1100 IPL matches
@@ -945,221 +1055,6 @@ class HeuristicAuditor:
             "confidence_interval": [win_prob - 0.2, win_prob + 0.2],
             "status": "LITE_ML_FALLBACK"
         }
-
-    def predict_pre_match(self, batting_team: str, bowling_team: str, venue: str) -> Dict:
-        """
-        High-level pre-match prediction using only static features.
-        Used when matches haven't started yet.
-        """
-        normalizer = CricsheetNormalizer()
-        n_bat = normalizer.normalize_team(batting_team)
-        n_bowl = normalizer.normalize_team(bowling_team)
-        n_venue = normalizer.normalize_venue(venue)
-
-        # Baseline ELO from recent (or default if missing)
-        bat_elo = 1500.0
-        bowl_elo = 1500.0
-        
-        # Try to find recent ELO in lookup
-        for d in sorted(normalizer.elo_lookup.keys(), reverse=True):
-            if n_bat in normalizer.elo_lookup[d]:
-                bat_elo = normalizer.elo_lookup[d][n_bat]
-            if n_bowl in normalizer.elo_lookup[d]:
-                bowl_elo = normalizer.elo_lookup[d][n_bowl]
-            if bat_elo != 1500.0 and bowl_elo != 1500.0:
-                break
-
-        # Calculate pre-match features (mock context)
-        # Using 0 runs/0 wickets at over 0, 120 balls remaining
-        static_features = {
-            'inning': 1, 'over': 0.0, 'total_runs': 0, 'total_wickets': 0,
-            'crr': 0.0, 'runs_last_6': 0, 'wickets_last_6': 0,
-            'boundary_rate': 0.1, 'dot_pressure': 0.4,
-            'balls_remaining': 120,
-            'bat_sr': 130.0, 'bat_avg': 25.0, 'bat_bp': 12.0,
-            'bowl_econ': 8.5, 'bowl_sr': 20.0, 'bowl_avg': 28.0,
-            'temp': 28.0, 'humidity': 55.0, 'dew': 18.0,
-            'bat_elo': bat_elo, 'bowl_elo': bowl_elo,
-            'elo_diff': bat_elo - bowl_elo
-        }
-
-        # Transform features
-        X_static = pd.DataFrame([static_features])
-        
-        # Explicitly order to match training schema (22 features)
-        col_order = [
-            'inning', 'over', 'total_runs', 'total_wickets', 'crr', 
-            'runs_last_6', 'wickets_last_6', 'boundary_rate', 'dot_pressure',
-            'balls_remaining', 'bat_sr', 'bat_avg', 'bat_bp', 'bowl_econ',
-            'bowl_sr', 'bowl_avg', 'temp', 'humidity', 'dew', 'bat_elo',
-            'bowl_elo', 'elo_diff'
-        ]
-        X_static = X_static[col_order]
-        try:
-            if hasattr(self, 'static_scaler') and self.static_scaler:
-                # Check for fitted status (XGBoost/Sklearn pattern)
-                X_static_scaled = self.static_scaler.transform(X_static)
-            else:
-                X_static_scaled = X_static
-        except Exception as e:
-            logger.warning(f"⚠️ Scaler transform failed (likely NotFitted): {e}. Using raw features.")
-            X_static_scaled = X_static
-
-        # Predict using static model (probabilities for classes [0, 1])
-        if self.static_model:
-            try:
-                # Some models take DataFrame, some take NumPy
-                probs = self.static_model.predict_proba(X_static_scaled)[0]
-                # Class 1 is Win probability for Batting Team
-                win_prob = float(probs[1]) if len(probs) > 1 else 0.5
-            except Exception as e:
-                logger.error(f"Static pre-match prediction failed: {e}")
-                # Simple fallback: Higher ELO = Higher Win %
-                win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
-                win_prob = max(0.05, min(0.95, win_prob))
-        else:
-            win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
-            win_prob = max(0.05, min(0.95, win_prob))
-
-        return {
-            'win_probability': win_prob,
-            'batting_team': batting_team,
-            'bowling_team': bowling_team,
-            'venue': venue,
-            'confidence': 0.6,
-            'status': "PRE_MATCH_PREDICTION"
-        }
-        
-        t1_elo = context.get('bat_elo', 1500)
-        t2_elo = context.get('bowl_elo', 1500)
-        elo_diff = t1_elo - t2_elo
-        
-        # Baseline probability from strength (e.g. ELO diff roughly maps to log odds)
-        base_elo_impact = elo_diff / 400.0 * 25.0
-        
-        crr = context.get('crr', 8.0)
-        req_rr = context.get('req_rr', 8.0) # Might not be in context yet
-        run_rate_impact = (crr - 8.0) * 5.0
-        
-        factors = [
-            {"factor": "Team Form (ELO)", "impact": min(30, max(-30, base_elo_impact))},
-            {"factor": "Current Run Rate", "impact": min(20, max(-20, run_rate_impact))},
-            {"factor": "Historical Venue Edge", "impact": np.random.uniform(-5, 5)}, # Mocked for now
-            {"factor": "Toss Decision Fit", "impact": np.random.uniform(-3, 3)}      # Mocked for now
-        ]
-        
-        # Sort by absolute impact dropping lowest
-        factors = sorted(factors, key=lambda x: abs(x['impact']), reverse=True)[:4]
-        return factors
-    
-    def save_models(self, path_prefix: str):
-        """Save all models and scalers"""
-        # Save Calibrated Ensemble via Pickle
-        if self.static_model:
-            with open(f"{path_prefix}_static_ensemble.pkl", "wb") as f:
-                pickle.dump(self.static_model, f)
-        elif self.base_xgb: # Fallback for backwards comp
-            self.base_xgb.save_model(f"{path_prefix}_xgb.json")
-        
-        # Save LSTM
-        torch.save(self.lstm_model.state_dict(), f"{path_prefix}_lstm.pth")
-        
-        # Save scalers
-        with open(f"{path_prefix}_scalers.pkl", 'wb') as f:
-            pickle.dump({
-                'static': self.static_scaler,
-                'lstm': self.lstm_scaler
-            }, f)
-        
-        logger.info(f"Models saved to {path_prefix}")
-
-    def save_to_hub(self, repo_id: str, path_prefix: str, commit_message: str = "Update IPL models"):
-        """Save models locally first, then upload to Hugging Face Hub"""
-        self.save_models(path_prefix)
-        
-        api = HfApi()
-        files_to_upload = [
-            f"{path_prefix}_xgb.json",
-            f"{path_prefix}_lstm.pth",
-            f"{path_prefix}_scalers.pkl"
-        ]
-        
-        for file_path in files_to_upload:
-            if os.path.exists(file_path):
-                api.upload_file(
-                    path_or_fileobj=file_path,
-                    path_in_repo=os.path.basename(file_path),
-                    repo_id=repo_id,
-                    commit_message=commit_message
-                )
-        logger.info(f"✅ Models successfully pushed to Hub: {repo_id}")
-
-    def load_from_hub(self, repo_id: str, path_prefix: str):
-        """Download models from Hugging Face Hub then load them"""
-        files_to_download = [
-            f"{os.path.basename(path_prefix)}_xgb.json",
-            f"{os.path.basename(path_prefix)}_lstm.pth",
-            f"{os.path.basename(path_prefix)}_scalers.pkl"
-        ]
-        
-        os.makedirs(os.path.dirname(path_prefix), exist_ok=True)
-        
-        for file_name in files_to_download:
-            # We must specify the folder path in the repository
-            repo_file_path = f"models/{file_name}"
-            local_path = hf_hub_download(repo_id=repo_id, filename=repo_file_path)
-            # Copy to our expected path_prefix location
-            target_name = f"{path_prefix}_{file_name.split('_')[-1]}"
-            import shutil
-            shutil.copy2(local_path, target_name)
-            
-        self.load_models(path_prefix)
-        logger.info(f"✅ Models successfully loaded from Hub: {repo_id}")
-        
-    def load_models(self, path_prefix: str):
-        """Load all models and scalers"""
-        # Attempt to load new static_ensemble
-        try:
-            with open(f"{path_prefix}_static_ensemble.pkl", "rb") as f:
-                self.static_model = pickle.load(f)
-        except (FileNotFoundError, EOFError):
-            logger.info("Calibrated Ensemble not found, attempting legacy XGB model.")
-            # Load legacy XGBoost
-            self.base_xgb = xgb.XGBClassifier()
-            self.base_xgb.load_model(f"{path_prefix}_xgb.json")
-            
-            # Create a mock wrapper so predict() works
-            from sklearn.calibration import CalibratedClassifierCV
-            from sklearn.svm import SVC
-            
-            # Extremely hacky dummy wrapper just for interface compatibility if missing
-            class DummyCalibrated:
-                def __init__(self, xgb_m): self.m = xgb_m
-                def predict_proba(self, X): return self.m.predict_proba(X)
-            self.static_model = DummyCalibrated(self.base_xgb)
-        
-        # Load LSTM
-        self.lstm_model = self.build_lstm_model()
-        try:
-            self.lstm_model.load_state_dict(torch.load(f"{path_prefix}_lstm.pth", map_location=self.device, weights_only=True))
-        except TypeError:
-            self.lstm_model.load_state_dict(torch.load(f"{path_prefix}_lstm.pth", map_location=self.device))
-            
-        self.lstm_model.eval()
-        
-        # Load scalers with joblib mmap for RAM efficiency
-        try:
-            with open(f"{path_prefix}_scalers.pkl", 'rb') as f:
-                scalers = joblib.load(f, mmap_mode='r')
-                self.static_scaler = scalers['static']
-                self.lstm_scaler = scalers['lstm']
-        except Exception as e:
-            logger.warning(f"⚠️ Scalers not loaded correctly: {e}. Attempting recovery...")
-            from sklearn.preprocessing import StandardScaler
-            self.static_scaler = StandardScaler()
-            # Force fit if possible or keep unfitted check
-            
-        logger.info(f"Models loaded from {path_prefix} (Titan Optimized)")
 
 
 class SequenceDataset(Dataset):

@@ -70,6 +70,19 @@
         .status-active { color: var(--accent-emerald); display: flex; align-items: center; gap: 6px; }
         .pulse-dot { width: 6px; height: 6px; background: var(--accent-emerald); border-radius: 50%; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* ── Sovereign Intelligence Panels ── */
+        .intel-panel { background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 20px; }
+        .intel-header { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 800; color: var(--accent-cyan); text-transform: uppercase; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .prediction-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .prediction-table th { text-align: left; padding: 10px; border-bottom: 1px solid var(--border); color: var(--text-dim); text-transform: uppercase; font-size: 11px; }
+        .prediction-table td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .badge-conf { padding: 3px 8px; border-radius: 12px; font-size: 10px; font-weight: 800; font-family: 'JetBrains Mono'; text-transform: uppercase; border: 1px solid currentColor; }
+        
+        .betting-insight { background: rgba(16, 185, 129, 0.05); border-left: 3px solid var(--accent-emerald); padding: 15px; margin-top: 15px; border-radius: 4px; }
+        .betting-insight h4 { color: var(--accent-emerald); margin-bottom: 5px; font-size: 13px; font-weight: 800; text-transform: uppercase; }
+        .betting-insight p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -98,6 +111,34 @@
                     <div class="card-title" style="margin-top:40px"><i class="fas fa-dna"></i> Principal Momentum Drivers (SHAP)</div>
                     <div id="shap-list" class="shap-container">
                         <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- NEW SOVEREIGN INTELLIGENCE PANEL -->
+                <div class="card" id="intel-container" style="display: none;">
+                    <div class="card-title"><i class="fas fa-brain"></i> Sovereign Match Intelligence</div>
+                    
+                    <div class="intel-panel">
+                        <div class="intel-header"><i class="fas fa-star"></i> Important Predictions</div>
+                        <table class="prediction-table">
+                            <thead>
+                                <tr><th>Factor</th><th>Prediction</th><th>Confidence</th></tr>
+                            </thead>
+                            <tbody id="intel-predictions">
+                                <!-- JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="intel-panel">
+                        <div class="intel-header"><i class="fas fa-chart-line"></i> Betting & Analytics Insights</div>
+                        <div class="betting-insight">
+                            <h4>Strategic Recommendation</h4>
+                            <p id="intel-strategy">Wait for the Toss...</p>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 13px; font-weight: 600; color: var(--text-dim);">
+                            MATCH VOLATILITY INDEX: <span id="intel-volatility" style="color: var(--accent-rose); font-family: 'JetBrains Mono'; margin-left: 10px;">MEDIUM</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -165,10 +206,38 @@
 
             const log = document.getElementById('audit-log');
             if (prediction.forensic_trace && prediction.forensic_trace.length > 0) {
-                log.innerHTML = prediction.forensic_trace.map(t => 
-                    `<div class="audit-entry">[AUDITOR] ${t}</div>`
-                ).join('');
+                log.innerHTML = prediction.forensic_trace.map((t, idx) => {
+                    const delay = idx * 0.1;
+                    return `<div class="audit-entry" style="animation-delay: ${delay}s">[AUDITOR] ${t}</div>`
+                }).join('');
                 log.scrollTop = log.scrollHeight;
+            }
+
+            // Render Intelligence if available
+            if (prediction.intelligence) {
+                document.getElementById('intel-container').style.display = 'block';
+                
+                // Predictions table
+                if (prediction.intelligence.predictions) {
+                    document.getElementById('intel-predictions').innerHTML = prediction.intelligence.predictions.map(p => {
+                        let confColor = p.confidence.toLowerCase() === 'high' || p.confidence.toLowerCase() === 'very high' ? 'var(--accent-emerald)' : 'var(--accent-cyan)';
+                        return `
+                        <tr>
+                            <td style="font-weight:600; color:var(--text-main)">${p.factor}</td>
+                            <td style="color:var(--text-dim)">${p.prediction}</td>
+                            <td><span class="badge-conf" style="color:${confColor}">${p.confidence}</span></td>
+                        </tr>
+                        `;
+                    }).join('');
+                }
+
+                // Betting Insights
+                if (prediction.intelligence.betting) {
+                    document.getElementById('intel-strategy').textContent = prediction.intelligence.betting.recommendation || '';
+                    document.getElementById('intel-volatility').textContent = prediction.intelligence.betting.volatility || 'UNKNOWN';
+                }
+            } else {
+                document.getElementById('intel-container').style.display = 'none';
             }
             
             document.getElementById('last-update').textContent = `UTC: ${new Date().toISOString().split('T')[1].split('.')[0]}`;

@@ -98,8 +98,8 @@ async def lifespan(app: FastAPI):
                 logger.info("✅ Titan ML Engine warmed up")
                 
                 # DNA Engine (New v4.8)
-                from backend.ml_engine.context_engine import SovereignContextEngine
-                app.state.dna_engine = SovereignContextEngine()
+                from backend.ml_engine.context_engine import ContextualAuditor
+                app.state.dna_engine = ContextualAuditor()
                 logger.info("✅ DNA Engine synchronized")
             except Exception as warmup_error:
                 logger.warning(f"⚠️ Warmup degraded: {warmup_error}")

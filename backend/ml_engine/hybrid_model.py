@@ -1137,35 +1137,8 @@ class RealTimePredictor:
                 f"Sovereign Verdict: {final_p*100:.1f}% Win Probability calibrated."
             ]
 
-            # ── Sovereign Intelligence Override ──────────────────────────────
-            intelligence = None
-            t1_lower, t2_lower = t1.lower(), t2.lower()
-            if ("kolkata" in t1_lower or "kolkata" in t2_lower) and ("punjab" in t1_lower or "punjab" in t2_lower):
-                intelligence = {
-                    "predictions": [
-                        {"factor": "Top Batter (KKR)", "prediction": "Sunil Narine (Powerplay Intensity)", "confidence": "High"},
-                        {"factor": "Top Batter (PBKS)", "prediction": "Prabhsimran Singh (Eden Paradise)", "confidence": "Moderate"},
-                        {"factor": "Highest Wicket Taker", "prediction": "Sam Curran (Death Over Variance)", "confidence": "High"},
-                        {"factor": "Match Momentum", "prediction": "High Scoring (190+ Par Score)", "confidence": "Very High"}
-                    ],
-                    "betting": {
-                        "recommendation": "Wait for the Toss. Eden Gardens is a Chasing Paradise. The team winning the toss and electing to bowl first will see their Win Probability shift from 50% to ≈58.5% in the first 6 overs.",
-                        "volatility": "MEDIUM"
-                    }
-                }
-            elif ("gujarat" in t1_lower or "gujarat" in t2_lower) and ("rajasthan" in t1_lower or "rajasthan" in t2_lower):
-                intelligence = {
-                    "predictions": [
-                        {"factor": "Top Batter (GT)", "prediction": "Shubman Gill (Anchor Role)", "confidence": "Very High"},
-                        {"factor": "Top Batter (RR)", "prediction": "Jos Buttler (Pace Exploitation)", "confidence": "High"},
-                        {"factor": "Highest Wicket Taker", "prediction": "Trent Boult (Powerplay Swing)", "confidence": "High"},
-                        {"factor": "Match Momentum", "prediction": "Subtle Pitch Wear (165 Par Score)", "confidence": "Moderate"}
-                    ],
-                    "betting": {
-                        "recommendation": "Defend the Total. Ahmedabad's black soil tracks have favored teams batting first this week.",
-                        "volatility": "HIGH"
-                    }
-                }
+            # ── Dynamic Sovereign Intelligence Override ───────────────────────
+            intelligence = self._generate_live_intelligence(match_data, final_p)
 
             return {
                 "match_id": match_id,
@@ -1216,6 +1189,104 @@ class RealTimePredictor:
         self._publish_prediction(match_id, result)
         
         return result
+        
+    def _generate_live_intelligence(self, match_data: Dict, win_prob: float) -> Dict:
+        """Dynamically generates live match intelligence based on current metrics."""
+        t1, t2 = match_data.get('teams', ['Team 1', 'Team 2'])
+        status = match_data.get('status', 'scheduled').lower()
+        
+        # Safely parse metrics
+        runs = 0
+        wickets = 0
+        over = 0.0
+        
+        score_str = match_data.get('score', '')
+        if score_str and isinstance(score_str, str):
+            try:
+                if '/' in score_str:
+                    parts = score_str.split('/')
+                    runs = int(parts[0].strip())
+                    wickets = int(parts[1].strip() if len(parts) > 1 else '0')
+                elif '-' in score_str:
+                    parts = score_str.split('-')
+                    runs = int(parts[0].strip())
+                    wickets = int(parts[1].strip() if len(parts) > 1 else '0')
+            except ValueError:
+                pass
+                
+        try:
+            over = float(match_data.get('over', 0.0))
+        except (ValueError, TypeError):
+            pass
+            
+        crr = match_data.get('crr', 0.0)
+        if over > 0 and crr == 0.0:
+            crr = runs / over
+
+        batting_team = match_data.get('batting_team', t1)
+        bowling_team = t2 if batting_team == t1 else t1
+        
+        if status in ['completed', 'abandoned', 'stump']:
+            return {
+                "predictions": [
+                    {"factor": "Match Result", "prediction": "Session or Match is concluded.", "confidence": "Very High"}
+                ],
+                "betting": {"recommendation": "Markets locked.", "volatility": "ZERO"}
+            }
+
+        if status == 'scheduled' or over <= 0.1:
+            return {
+                "predictions": [
+                    {"factor": f"Opening Phase ({batting_team})", "prediction": "Assess pitch bounce and initial seam movement.", "confidence": "High"},
+                    {"factor": f"Key Threat ({bowling_team})", "prediction": "Exploit early lateral movement in Powerplay.", "confidence": "Moderate"}
+                ],
+                "betting": {
+                    "recommendation": "Pre-match phase: Wait for the toss and initial pitch assessment by the openers.",
+                    "volatility": "MEDIUM"
+                }
+            }
+        
+        preds = []
+        volatility = "LOW"
+        
+        if over > 0:
+            balls_bowled = int(over) * 6 + ((over - int(over)) * 10)
+            proj_score = int(runs + (crr * ((120 - balls_bowled) / 6.0))) if balls_bowled < 120 else runs
+            
+            momentum_txt = "Standard Accumulation"
+            if crr > 9:
+                momentum_txt = "Aggressive Attack"
+                volatility = "HIGH"
+                proj_score += int(10 * (crr / 9.0))
+            elif crr < 6.5:
+                momentum_txt = "Defensive Consolidation"
+                proj_score -= 10
+            
+            preds.append({"factor": "Match Momentum", "prediction": f"{momentum_txt} (~{proj_score} Projected Score)", "confidence": "High"})
+        
+        if wickets >= 4 and over < 10:
+            preds.append({"factor": "Top Order Health", "prediction": f"Innings collapsing. Extreme pressure on {batting_team} Middle Order.", "confidence": "Very High"})
+            volatility = "VERY HIGH"
+        elif wickets < 2 and over > 10:
+            preds.append({"factor": "Platform Setup", "prediction": "Solid Platform created. Launchpad activated for Death Overs.", "confidence": "Very High"})
+        else:
+            preds.append({"factor": "Current Phase", "prediction": "Consolidating wickets while maintaining strike rotation.", "confidence": "Moderate"})
+            
+        if win_prob > 0.75:
+            rec = f"{batting_team} dominates the mathematical necessity. Wait for odds correction to short."
+        elif win_prob < 0.25:
+            rec = f"{batting_team} win probability degraded. Heavy advantage heavily shifts to {bowling_team}."
+        else:
+            rec = "Superposition detected. Match is in equilibrium; expect significant momentum shifts on the next wicket."
+            volatility = "HIGH"
+
+        return {
+            "predictions": preds,
+            "betting": {
+                "recommendation": rec,
+                "volatility": volatility
+            }
+        }
     
     def _extract_static_features(self, df: pd.DataFrame) -> np.ndarray:
         """Extract static features dynamically matching training structure"""

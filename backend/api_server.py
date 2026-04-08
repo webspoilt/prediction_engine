@@ -386,6 +386,7 @@ async def list_matches():
     List all matches. Uses the 5-source waterfall pipeline.
     GUARANTEE: This endpoint NEVER returns an empty list.
     """
+    global predictor, betting_engine
     fetcher = get_fetcher()
     matches = await fetcher.discover_matches()
 
@@ -558,11 +559,11 @@ async def get_betting_odds(match_id: str):
       - Top Batsman / Top Bowler prop bets
       - Match Special props
     """
+    global betting_engine, predictor
     if not betting_engine:
         # Lazy init fallback
         try:
             from backend.api.betting_engine import BettingEngine
-            global betting_engine
             betting_engine = BettingEngine(bookmaker_margin=0.05)
         except Exception:
             raise HTTPException(status_code=503, detail="Betting engine unavailable")

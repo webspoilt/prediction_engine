@@ -79,28 +79,55 @@ MATCH_DURATION_SECONDS = 3.5 * 3600  # 12600s = 3.5 hours
 
 
 def is_ipl_team(team_name: str) -> bool:
-    """Check if a team name or substring belongs to the official IPL 2026 list."""
+    """
+    STRICT Check: Only official IPL 2026 teams pass.
+    Uses exact full-name matching + official short codes.
+    Prevents PSL (Peshawar Zalmi), CPL, BBL, County etc. pollution.
+    """
     if not team_name: return False
-    tn = team_name.lower()
-    
-    # Official keywords to prevent "County Championship" pollution
-    ipl_keywords = [
-        "csk", "chennai", "super kings",
-        "mi", "mumbai", "indians",
-        "rcb", "bangalore", "bengaluru", "challengers",
-        "kkr", "kolkata", "knight riders",
-        "srh", "sunrisers", "hyderabad",
-        "rr", "rajasthan", "royals",
-        "dc", "delhi", "capitals",
-        "pbks", "punjab",
-        "gt", "gujarat", "titans",
-        "lsg", "lucknow", "super giants"
+    tn = team_name.strip().lower()
+
+    # Official IPL 2026 full names (exact match)
+    _OFFICIAL_IPL_TEAMS = {
+        "chennai super kings", "mumbai indians",
+        "royal challengers bengaluru", "royal challengers bangalore",
+        "kolkata knight riders", "sunrisers hyderabad",
+        "rajasthan royals", "delhi capitals",
+        "punjab kings", "kings xi punjab",
+        "gujarat titans", "lucknow super giants",
+    }
+
+    # Official short codes
+    _OFFICIAL_SHORT_CODES = {
+        "csk", "mi", "rcb", "kkr", "srh", "rr", "dc", "pbks", "gt", "lsg",
+    }
+
+    # 1. Exact full name match (case-insensitive)
+    if tn in _OFFICIAL_IPL_TEAMS:
+        return True
+
+    # 2. Exact short code match (for API responses that return "CSK", "MI" etc.)
+    if tn in _OFFICIAL_SHORT_CODES:
+        return True
+
+    # 3. Two-word compound check: team name must contain BOTH parts of an IPL identity
+    #    e.g. "chennai" + "kings" OR "mumbai" + "indians" — prevents "Hyderabad Kingsmen"
+    _COMPOUND_IDENTIFIERS = [
+        ("chennai", "kings"), ("chennai", "super"),
+        ("mumbai", "indians"),
+        ("royal", "challengers"), ("bengaluru", "challengers"), ("bangalore", "challengers"),
+        ("kolkata", "knight"), ("knight", "riders"),
+        ("sunrisers", "hyderabad"),
+        ("rajasthan", "royals"),
+        ("delhi", "capitals"),
+        ("punjab", "kings"),
+        ("gujarat", "titans"),
+        ("lucknow", "giants"), ("lucknow", "super"),
     ]
-    
-    for k in ipl_keywords:
-        if k in tn:
+    for word1, word2 in _COMPOUND_IDENTIFIERS:
+        if word1 in tn and word2 in tn:
             return True
-            
+
     return False
 
 def is_ipl_match(t1: str, t2: str) -> bool:
@@ -116,12 +143,8 @@ def is_ipl_match(t1: str, t2: str) -> bool:
 def compute_match_status(start_epoch: float, match_id: str = "") -> str:
     """
     Compute match status DYNAMICALLY based on current time.
-    v4.8 Sovereign Sync: Force Match 8 completion and Match 9 promotion.
+    Pure time-based logic — no hardcoded overrides.
     """
-    if match_id == "ipl2026_8" or match_id == "jina_8":
-        # Force Match 8 (MI vs DC) to completed as it is confirmed finished
-        return "completed"
-
     if start_epoch <= 0:
         return "scheduled"
     
@@ -524,10 +547,7 @@ class MultiSourceFetcher:
         all_matches = await self.discover_matches()
         all_matches = [m for m in all_matches if is_ipl_match(m['teams'][0], m['teams'][1])]
         
-        # Priority Weighting for Match 9 (GT vs RR)
         def priority_score(m):
-            mid = m.get('match_id', '')
-            if mid == 'ipl2026_9' or mid == 'jina_9': return 1000
             if m.get('status') == 'live': return 500
             return 0
 
@@ -726,17 +746,13 @@ class MultiSourceFetcher:
         return list(merged.values())
 
     def _merge_with_schedule(self, live_results: List[Dict]) -> List[Dict]:
-        """Merge live results with static schedule, prioritizing Match 9 (GT vs RR)."""
+        """Merge live results with static schedule. Live matches first, then chronological."""
         schedule = self._fresh_schedule_copy()
         merged = self._merge_results(schedule, live_results)
         
         def sort_key(m):
             status_order = {"live": 0, "scheduled": 1, "completed": 2}
-            # Sovereign Priority Pinning
-            mid = m.get("match_id", "")
-            priority = 0
-            if "ipl2026_9" in mid: priority = -100 # Put Match 9 at absolute top
-            return (status_order.get(m.get("status", "scheduled"), 1), priority, m.get("start_epoch", 0) or float("inf"))
+            return (status_order.get(m.get("status", "scheduled"), 1), m.get("start_epoch", 0) or float("inf"))
 
         merged.sort(key=sort_key)
         return merged

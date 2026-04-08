@@ -1,0 +1,62 @@
+MCP error -32602: Input validation error: Invalid arguments for tool list_network_requests: [
+  {
+    "received": "Fetch",
+    "code": "invalid_enum_value",
+    "options": [
+      "document",
+      "stylesheet",
+      "image",
+      "media",
+      "font",
+      "script",
+      "texttrack",
+      "xhr",
+      "fetch",
+      "prefetch",
+      "eventsource",
+      "websocket",
+      "manifest",
+      "signedexchange",
+      "ping",
+      "cspviolationreport",
+      "preflight",
+      "fedcm",
+      "other"
+    ],
+    "path": [
+      "resourceTypes",
+      0
+    ],
+    "message": "Invalid enum value. Expected 'document' | 'stylesheet' | 'image' | 'media' | 'font' | 'script' | 'texttrack' | 'xhr' | 'fetch' | 'prefetch' | 'eventsource' | 'websocket' | 'manifest' | 'signedexchange' | 'ping' | 'cspviolationreport' | 'preflight' | 'fedcm' | 'other', received 'Fetch'"
+  },
+  {
+    "received": "XHR",
+    "code": "invalid_enum_value",
+    "options": [
+      "document",
+      "stylesheet",
+      "image",
+      "media",
+      "font",
+      "script",
+      "texttrack",
+      "xhr",
+      "fetch",
+      "prefetch",
+      "eventsource",
+      "websocket",
+      "manifest",
+      "signedexchange",
+      "ping",
+      "cspviolationreport",
+      "preflight",
+      "fedcm",
+      "other"
+    ],
+    "path": [
+      "resourceTypes",
+      1
+    ],
+    "message": "Invalid enum value. Expected 'document' | 'stylesheet' | 'image' | 'media' | 'font' | 'script' | 'texttrack' | 'xhr' | 'fetch' | 'prefetch' | 'eventsource' | 'websocket' | 'manifest' | 'signedexchange' | 'ping' | 'cspviolationreport' | 'preflight' | 'fedcm' | 'other', received 'XHR'"
+  }
+]

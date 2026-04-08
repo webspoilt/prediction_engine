@@ -101,6 +101,11 @@ async def lifespan(app: FastAPI):
                 from backend.ml_engine.context_engine import ContextualAuditor
                 app.state.dna_engine = ContextualAuditor()
                 logger.info("✅ DNA Engine synchronized")
+                
+                # Betting Engine (1xBet/4rabet style odds)
+                from backend.api.betting_engine import BettingEngine
+                betting_engine = BettingEngine(bookmaker_margin=0.05)
+                logger.info("✅ Betting Engine loaded (1xBet/4rabet odds active)")
             except Exception as warmup_error:
                 logger.warning(f"⚠️ Warmup degraded: {warmup_error}")
 
@@ -454,6 +459,33 @@ async def list_matches():
             except Exception as e:
                 logger.warning(f"Enrichment failed for {m.get('match_id')}: {e}")
 
+    # Enrich with betting odds (v5.0 — 1xBet/4rabet Decimal Odds)
+    for m in matches:
+        if len(m.get("teams", [])) != 2: continue
+        try:
+            if betting_engine:
+                t1, t2 = m["teams"]
+                prob = m.get("win_probability", 0.5)
+                pred_stub = {"win_probability": prob, "confidence": 0.7}
+                odds_data = betting_engine.generate_match_odds(pred_stub, t1, t2, m.get("match_id", ""))
+                # Inline odds for card display
+                winner_odds = odds_data.match_winner
+                short1 = betting_engine._normalize_team(t1)
+                short2 = betting_engine._normalize_team(t2)
+                t1_odds = winner_odds.get(short1) or winner_odds.get(t1)
+                t2_odds = winner_odds.get(short2) or winner_odds.get(t2)
+                m["betting_odds"] = {
+                    "team1_decimal": t1_odds.decimal_odds if t1_odds else 2.0,
+                    "team2_decimal": t2_odds.decimal_odds if t2_odds else 2.0,
+                    "team1_american": t1_odds.american_odds if t1_odds else "+100",
+                    "team2_american": t2_odds.american_odds if t2_odds else "+100",
+                    "team1_value": t1_odds.value_rating if t1_odds else "Fair",
+                    "team2_value": t2_odds.value_rating if t2_odds else "Fair",
+                    "overround": round((1/(t1_odds.decimal_odds if t1_odds else 2) + 1/(t2_odds.decimal_odds if t2_odds else 2)) * 100, 1) if t1_odds and t2_odds else 100.0,
+                }
+        except Exception as e:
+            logger.warning(f"Betting odds enrichment failed for {m.get('match_id')}: {e}")
+
     return matches
 
 
@@ -512,6 +544,59 @@ async def get_upcoming_matches(season: str):
     fetcher = get_fetcher()
     upcoming = await fetcher.get_upcoming(limit=20)
     return {"matchschedule": upcoming}
+
+
+# ── Betting Odds API (1xBet/4rabet Style) ────────────────────────────────────
+
+@app.get("/api/betting/{match_id}")
+async def get_betting_odds(match_id: str):
+    """
+    Full betting data package for a match, styled like 1xBet / 4rabet.
+    Returns decimal/fractional/american odds for:
+      - Match Winner
+      - Total Runs Over/Under
+      - Top Batsman / Top Bowler prop bets
+      - Match Special props
+    """
+    if not betting_engine:
+        # Lazy init fallback
+        try:
+            from backend.api.betting_engine import BettingEngine
+            global betting_engine
+            betting_engine = BettingEngine(bookmaker_margin=0.05)
+        except Exception:
+            raise HTTPException(status_code=503, detail="Betting engine unavailable")
+
+    fetcher = get_fetcher()
+    match = await fetcher.get_match_by_id(match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    t1, t2 = match.get("teams", ["Team A", "Team B"])
+    win_prob = match.get("win_probability", 0.5)
+
+    prediction_stub = {
+        "win_probability": win_prob,
+        "confidence": 0.7,
+        "crr": 7.5,
+        "over": match.get("over", 0.0),
+        "inning": 1,
+        "total_runs": 0,
+    }
+
+    # If we have a live prediction, use it
+    if predictor and match.get("status") == "live":
+        try:
+            live_pred = await predictor.predict_live_match(match)
+            prediction_stub.update({
+                "win_probability": live_pred.get("win_probability", win_prob),
+                "confidence": live_pred.get("confidence", 0.7),
+            })
+        except Exception:
+            pass
+
+    odds_data = betting_engine.generate_match_odds(prediction_stub, t1, t2, match_id)
+    return odds_data.to_dict()
 
 
 # ── Points Table ─────────────────────────────────────────────────────────────

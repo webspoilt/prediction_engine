@@ -16,6 +16,34 @@ from typing import Optional, Dict, List, Any
 
 logger = logging.getLogger(__name__)
 
+
+def _is_ipl_team_strict(name: str) -> bool:
+    """Strict IPL team validation for scraped data — prevents PSL/CPL/BBL pollution."""
+    if not name: return False
+    tn = name.strip().lower()
+    _OFFICIAL = {
+        "chennai super kings", "mumbai indians",
+        "royal challengers bengaluru", "royal challengers bangalore",
+        "kolkata knight riders", "sunrisers hyderabad",
+        "rajasthan royals", "delhi capitals",
+        "punjab kings", "kings xi punjab",
+        "gujarat titans", "lucknow super giants",
+    }
+    _SHORT = {"csk", "mi", "rcb", "kkr", "srh", "rr", "dc", "pbks", "gt", "lsg"}
+    if tn in _OFFICIAL or tn in _SHORT:
+        return True
+    _COMPOUNDS = [
+        ("chennai", "kings"), ("mumbai", "indians"),
+        ("royal", "challengers"), ("kolkata", "knight"),
+        ("sunrisers", "hyderabad"), ("rajasthan", "royals"),
+        ("delhi", "capitals"), ("punjab", "kings"),
+        ("gujarat", "titans"), ("lucknow", "giants"),
+    ]
+    for w1, w2 in _COMPOUNDS:
+        if w1 in tn and w2 in tn:
+            return True
+    return False
+
 # ── Constants ────────────────────────────────────────────────────────────────
 JINA_READER_BASE = "https://r.jina.ai"
 
@@ -153,6 +181,10 @@ def extract_cricket_scores_from_html(html: str) -> List[Dict[str, Any]]:
                     elif "complete" in st or "won" in st or "result" in st:
                         status = "completed"
 
+                # STRICT IPL FILTER
+                if not (_is_ipl_team_strict(team1) and _is_ipl_team_strict(team2)):
+                    continue
+
                 matches.append({
                     "teams": [team1, team2],
                     "score": f"{total_runs}/{total_wickets}",
@@ -189,6 +221,10 @@ def extract_cricket_scores_from_html(html: str) -> List[Dict[str, Any]]:
                 overs = float(overs_match.group(1)) if overs_match else 0.0
 
                 status = "live" if any(w in text.lower() for w in ["live", "batting", "bowling"]) else "scheduled"
+
+                # STRICT IPL FILTER
+                if not (_is_ipl_team_strict(team1) and _is_ipl_team_strict(team2)):
+                    continue
 
                 matches.append({
                     "teams": [team1, team2],
@@ -249,6 +285,11 @@ def extract_cricket_scores_from_markdown(markdown: str) -> List[Dict[str, Any]]:
                 status = "live"
             elif any(w in ctx_lower for w in ["won", "result", "completed"]):
                 status = "completed"
+
+            # STRICT IPL FILTER: Reject non-IPL teams at parse time
+            if not (_is_ipl_team_strict(team1) and _is_ipl_team_strict(team2)):
+                i += 1
+                continue
 
             matches.append({
                 "teams": [team1, team2],

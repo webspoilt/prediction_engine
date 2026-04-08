@@ -929,9 +929,10 @@ class HybridEnsemble:
                 probs = self.static_model.predict_proba(X_static_scaled)[0]
                 win_prob = float(probs[1]) if len(probs) > 1 else 0.5
             except:
-                win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+                # Aggressive ELO scaling for wide probability spread (80-90%)
+                win_prob = 0.5 + (bat_elo - bowl_elo) / 400.0
         else:
-            win_prob = 0.5 + (bat_elo - bowl_elo) / 2000.0
+            win_prob = 0.5 + (bat_elo - bowl_elo) / 400.0
 
         return {
             'win_probability': max(0.05, min(0.95, win_prob)),
@@ -1041,9 +1042,10 @@ class HeuristicAuditor:
 
     def lite_predict(self, batting_team: str, bowling_team: str, crr: float, wickets: int, balls_rem: int) -> Dict:
         """Lite ML fallback if RAM is constrained but Titan UI needs data."""
-        # Simple logistic baseline derived from 1100 IPL matches
-        base_win = 0.5 + (crr - 8.0) * 0.05 - (wickets * 0.08)
-        win_prob = max(0.01, min(0.99, base_win))
+        # Aggressive scaling for wide UI swings (80-90%) based on match state
+        # High CRR adds huge bonus. High wickets drops win probability massively.
+        base_win = 0.5 + (crr - 8.0) * 0.12 - (wickets * 0.08)
+        win_prob = max(0.05, min(0.95, base_win))
         
         return {
             "win_probability": win_prob,
@@ -1103,9 +1105,27 @@ class RealTimePredictor:
             status = match_data.get('status', 'scheduled')
             source = match_data.get('source', 'Sovereign Hub')
             
-            # ── Base Probability from Static/API ─────────────────────────────
+            # ── Dynamic Probability Range Override (v5.0) ────────────────────
+            # If default 0.5 is passed, forcefully compute aggressive real-time probability
             base_p = match_data.get('win_probability', 0.5)
-            
+            if base_p == 0.5:
+                venue = match_data.get('venue', 'Unknown Venue')
+                if status == 'scheduled' or status == 'completed':
+                    base_p = self.model.predict_pre_match(t1, t2, venue).get("win_probability", 0.5)
+                elif status == 'live':
+                    crr = float(match_data.get('crr', 8.0))
+                    score_str = match_data.get('score', '')
+                    wickets = 0
+                    try:
+                        if '/' in score_str:
+                            wickets = int(score_str.split('/')[1].strip().split(' ')[0])
+                        elif '-' in score_str:
+                            wickets = int(score_str.split('-')[1].strip().split(' ')[0])
+                    except: pass
+                    
+                    aud = HeuristicAuditor()
+                    base_p = aud.lite_predict(t1, t2, crr, wickets, 120).get("win_probability", 0.5)
+
             # ── Sovereign DNA Injection (v4.8) ──────────────────────────────
             dna_modifier = 0.0
             forensic_notes = []
@@ -1144,7 +1164,11 @@ class RealTimePredictor:
             # ── Dynamic Sovereign Intelligence Override ───────────────────────
             intelligence = self._generate_live_intelligence(match_data, final_p)
 
-            return {
+            # Record inference
+            inference_time = (time.time() - start_time) * 1000 if 'start_time' in locals() else 0
+            self.inference_times.append(inference_time)
+
+            result = {
                 "match_id": match_id,
                 "win_probability": float(final_p),
                 "status": status,
@@ -1155,44 +1179,14 @@ class RealTimePredictor:
                 "intelligence": intelligence
             }
             
+            self._publish_prediction(match_id, result)
+            return result
+            
         except Exception as e:
             logger.error(f"Prediction logic crash: {e}")
             return {"error": str(e), "win_probability": 0.5}
         
-        # Ensure required columns for normalizer exist
-        required_cols = ['batsman', 'bowler', 'batting_team', 'bowling_team']
-        for col in required_cols:
-            if col not in df.columns:
-                df[col] = ''
-                
-        # Extract features
-        static_features = self._extract_static_features(df)
-        sequence_features = self._extract_sequence_features(df)
-        
-        # Optional: Grab raw context for the SHAP explainer from the normalized dataframe tail
-        raw_ctx = self.normalizer.create_match_features(df).tail(1).to_dict(orient='records')
-        ctx_dict = raw_ctx[0] if raw_ctx else {}
-        
-        # Make prediction
-        result = self.model.predict(
-            static_features.reshape(1, -1),
-            sequence_features.reshape(1, 18, 3),
-            raw_context=ctx_dict
-        )
-        
-        # Add metadata
-        inference_time = (time.time() - start_time) * 1000  # ms
-        self.inference_times.append(inference_time)
-        
-        result['match_id'] = match_id
-        result['inference_time_ms'] = inference_time
-        result['timestamp'] = time.time()
-        result['balls_analyzed'] = len(ball_data)
-        
-        # Publish prediction
-        self._publish_prediction(match_id, result)
-        
-        return result
+    # End of predict_live_match
         
     def _generate_live_intelligence(self, match_data: Dict, win_prob: float) -> Dict:
         """Dynamically generates live match intelligence based on current metrics."""

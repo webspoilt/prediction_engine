@@ -559,7 +559,7 @@
         </div>
         <div class="nav-actions" style="margin-left: auto; display: flex; gap: 15px;">
             <a href="/static/walkthrough.html" class="pro-link-btn" style="background: linear-gradient(135deg, var(--accent-emerald) 0%, var(--accent-cyan) 100%);"><i class="fas fa-file-alt"></i> MATCH PREVIEW</a>
-            <a href="/pro?match_id=ipl2026_12" class="pro-link-btn"><i class="fas fa-microscope"></i> PRO LAB</a>
+            <a href="/pro?match_id=ipl2026_14" class="pro-link-btn"><i class="fas fa-microscope"></i> PRO LAB</a>
             <div class="engine-status" id="engine-status-badge">
                 <span class="status-dot green"></span>
                 <span>TITAN ACTIVE</span>
@@ -600,7 +600,7 @@
                 </div>
                 <!-- v4.8 CTAs -->
                 <div class="hero-actions" style="margin-top:25px; display:flex; gap:15px; border-top:1px solid var(--border-glass); padding-top:20px">
-                    <button class="cta-primary-glow" onclick="const mid = currentMatches[0]?.match_id || 'ipl2026_9'; window.location='/pro?match_id='+mid">
+                    <button class="cta-primary-glow" onclick="const mid = currentMatches.find(m=>m.status==='live')?.match_id || currentMatches.find(m=>m.status==='scheduled')?.match_id || 'ipl2026_14'; window.location='/pro?match_id='+mid">
                         <i class="fas fa-brain"></i> ACCESS SOVEREIGN ANALYTICS
                     </button>
                     <button class="cta-secondary" onclick="document.querySelector('[data-tab=schedule]').click()">
@@ -655,8 +655,8 @@
 
     <script>
     /* ═══════════════════════════════════════════════════════════════════════════
-       IPL 2026 Prediction Engine — Frontend Controller (v4.8 Sovereign DNA)
-       "Never Empty" Architecture: Client-side fallback + multi-source pipeline
+       IPL 2026 Prediction Engine — Frontend Controller (v5.0 Betting Edition)
+       Auto-detects today's match. Shows 1xBet/4rabet decimal odds on every card.
        ═══════════════════════════════════════════════════════════════════════ */
 
     const TEAM_COLORS = {
@@ -674,9 +674,26 @@
         'Gujarat Titans': 'GT', 'Lucknow Super Giants': 'LSG'
     };
 
+    // OFFICIAL IPL TEAMS — strict validation to block PSL/CPL/BBL
+    const OFFICIAL_IPL_TEAMS = new Set([
+        'chennai super kings', 'mumbai indians',
+        'royal challengers bengaluru', 'royal challengers bangalore',
+        'kolkata knight riders', 'sunrisers hyderabad',
+        'rajasthan royals', 'delhi capitals',
+        'punjab kings', 'kings xi punjab',
+        'gujarat titans', 'lucknow super giants',
+        'csk', 'mi', 'rcb', 'kkr', 'srh', 'rr', 'dc', 'pbks', 'gt', 'lsg'
+    ]);
+
+    function isOfficialIPL(teamName) {
+        if (!teamName) return false;
+        return OFFICIAL_IPL_TEAMS.has(teamName.trim().toLowerCase());
+    }
+
+    // Updated offline schedule — today's match (Apr 8 = Match 14: DC vs GT)
     const OFFLINE_SCHEDULE = [
-        {match_id:'ipl2026_8',teams:['Delhi Capitals','Mumbai Indians'],team_short:['DC','MI'],venue:'Delhi',status:'completed',win_probability:0.5,score:'DC Won'},
-        {match_id:'ipl2026_9',teams:['Gujarat Titans','Rajasthan Royals'],team_short:['GT','RR'],venue:'Ahmedabad',status:'live',win_probability:0.5,score:'1/0'},
+        {match_id:'ipl2026_14',teams:['Delhi Capitals','Gujarat Titans'],team_short:['DC','GT'],venue:'Delhi',status:'live',win_probability:0.5,score:'—',date:'Apr 08, 2026'},
+        {match_id:'ipl2026_15',teams:['Kolkata Knight Riders','Lucknow Super Giants'],team_short:['KKR','LSG'],venue:'Kolkata',status:'scheduled',win_probability:0.5,score:'—',date:'Apr 09, 2026'},
     ];
 
     let currentMatches = [];
@@ -699,6 +716,9 @@
 
     function renderMatchCard(match) {
         const teams = match.teams || ['TBD', 'TBD'];
+        // CLIENT-SIDE IPL FILTER — final safety net
+        if (!isOfficialIPL(teams[0]) || !isOfficialIPL(teams[1])) return '';
+
         const t1 = teams[0]; const t2 = teams[1];
         const s1 = (match.team_short && match.team_short[0]) || getShort(t1);
         const s2 = (match.team_short && match.team_short[1]) || getShort(t2);
@@ -710,6 +730,21 @@
         
         let statusBadge = `<span class="live-badge status-${status}">${status.toUpperCase()}</span>`;
         if (status === 'live') statusBadge = `<span class="live-badge status-live"><span class="badge-dot"></span>LIVE</span>`;
+
+        // 1xBet / 4rabet Style Betting Odds
+        const odds = match.betting_odds || {};
+        const t1Decimal = odds.team1_decimal || (1 / Math.max(0.05, prob)).toFixed(2);
+        const t2Decimal = odds.team2_decimal || (1 / Math.max(0.05, 1 - prob)).toFixed(2);
+        const t1Value = odds.team1_value || 'Fair';
+        const t2Value = odds.team2_value || 'Fair';
+        const t1American = odds.team1_american || '';
+        const t2American = odds.team2_american || '';
+
+        const valueBadge = (val) => {
+            if (val === 'Strong Value') return '<span style="color:#10b981;font-size:9px;font-weight:800;margin-left:4px">★ VALUE</span>';
+            if (val === 'Overpriced') return '<span style="color:#f43f5e;font-size:9px;font-weight:800;margin-left:4px">⚠ OVER</span>';
+            return '';
+        };
 
         return `
             <div class="match-card ${status === 'live' ? 'live-card' : ''}" onclick="window.location='/pro?match_id=${match.match_id}'">
@@ -729,6 +764,22 @@
                     </div>
                 </div>
                 <div class="score-row">${match.score || '—'}</div>
+
+                <!-- 1xBet / 4rabet Style Decimal Odds Bar -->
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid rgba(255,255,255,0.06);margin-top:8px">
+                    <div style="text-align:center;flex:1">
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:800;color:${c1}">${parseFloat(t1Decimal).toFixed(2)}</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:600">${s1} WIN${valueBadge(t1Value)}</div>
+                        <div style="font-size:9px;color:#475569;font-family:'JetBrains Mono'">${t1American}</div>
+                    </div>
+                    <div style="width:1px;height:35px;background:rgba(255,255,255,0.08)"></div>
+                    <div style="text-align:center;flex:1">
+                        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:800;color:${c2}">${parseFloat(t2Decimal).toFixed(2)}</div>
+                        <div style="font-size:10px;color:#64748b;font-weight:600">${s2} WIN${valueBadge(t2Value)}</div>
+                        <div style="font-size:9px;color:#475569;font-family:'JetBrains Mono'">${t2American}</div>
+                    </div>
+                </div>
+
                 <div class="prob-bar-wrapper">
                     <div class="prob-labels">
                         <span style="color:${c1}">${s1} ${probPct}%</span>
@@ -739,13 +790,38 @@
             </div>`;
     }
 
+    function getTodaysMatch(matches) {
+        // Auto-detect today's match from schedule using IST date
+        const now = new Date();
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const istNow = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60000);
+        const todayStr = istNow.toLocaleDateString('en-US', {month: 'short', day: '2-digit', year: 'numeric'}).replace(',', ',');
+
+        // Find live match first
+        const live = matches.find(m => m.status === 'live');
+        if (live) return live;
+
+        // Find today's scheduled match
+        const todayMatch = matches.find(m => {
+            const d = m.date || '';
+            const matchDate = new Date(d + ' 2026');
+            return matchDate.toDateString() === istNow.toDateString() && m.status !== 'completed';
+        });
+        if (todayMatch) return todayMatch;
+
+        // Fall back to the next upcoming match
+        const upcoming = matches.filter(m => m.status === 'scheduled').sort((a, b) => (a.start_epoch || 0) - (b.start_epoch || 0));
+        return upcoming[0] || matches[0];
+    }
+
     function renderMatches(matches) {
-        const ipl9 = matches.find(m => m.match_id === 'ipl2026_9' || m.match_id === 'jina_9');
-        const liveMatches = matches.filter(m => m.status === 'live');
-        const upcomingMatches = matches.filter(m => m.status === 'scheduled');
-        
-        // v4.8 SOVEREIGN PINNING
-        let featured = (ipl9 && ipl9.status !== 'completed') ? ipl9 : (liveMatches[0] || upcomingMatches[0]);
+        // Filter to only IPL matches on the client side too
+        matches = matches.filter(m => {
+            const teams = m.teams || [];
+            return teams.length === 2 && isOfficialIPL(teams[0]) && isOfficialIPL(teams[1]);
+        });
+
+        const featured = getTodaysMatch(matches);
         
         if (featured) {
             document.getElementById('live-oracle-hero').style.display = 'block';
@@ -757,15 +833,30 @@
             document.getElementById('hero-win-pct').textContent = winnerPct + '%';
             document.getElementById('hero-win-team').textContent = winner.split(' ').pop().toUpperCase() + ' DNA VERDICT';
             
+            // Hero betting odds
+            const odds = featured.betting_odds || {};
+            const d1 = parseFloat(odds.team1_decimal || (1/Math.max(0.05, featured.win_probability))).toFixed(2);
+            const d2 = parseFloat(odds.team2_decimal || (1/Math.max(0.05, 1 - featured.win_probability))).toFixed(2);
+            const s1 = (featured.team_short && featured.team_short[0]) || getShort(featured.teams[0]);
+            const s2 = (featured.team_short && featured.team_short[1]) || getShort(featured.teams[1]);
+
             const auditLog = document.getElementById('hero-audit-log');
-            if (featured.status === 'live') {
-                auditLog.innerHTML = (featured.forensic_trace || []).map(t => `<div>[AUDITOR] ${t}</div>`).join('') || `<div>[AUDITOR] DNA Analyzed: GT (+15% Venue Edge) identified.</div>`;
+            if (featured.forensic_trace && featured.forensic_trace.length > 0) {
+                auditLog.innerHTML = featured.forensic_trace.map(t => `<div>[AUDITOR] ${t}</div>`).join('');
             } else {
-                auditLog.innerHTML = `<div>[AUDITOR] Pre-Match Spotlight: Analysis complete.</div>`;
+                auditLog.innerHTML = `<div>[AUDITOR] DNA Analyzed: ${s1} vs ${s2} matchup loaded.</div>
+                    <div style="margin-top:12px;padding:12px;background:rgba(16,185,129,0.08);border-radius:8px;border:1px solid rgba(16,185,129,0.2)">
+                        <div style="font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">1xBet / 4rabet DECIMAL ODDS</div>
+                        <div style="display:flex;gap:20px">
+                            <div><span style="color:${getColor(s1)};font-size:18px;font-weight:900">${d1}</span> <span style="font-size:10px">${s1}</span></div>
+                            <div><span style="color:${getColor(s2)};font-size:18px;font-weight:900">${d2}</span> <span style="font-size:10px">${s2}</span></div>
+                        </div>
+                    </div>`;
             }
         }
 
-        document.getElementById('live-grid').innerHTML = matches.filter(m => m.status === 'live' || m.status === 'scheduled').slice(0, 6).map(renderMatchCard).join('');
+        const liveAndScheduled = matches.filter(m => m.status === 'live' || m.status === 'scheduled').slice(0, 8);
+        document.getElementById('live-grid').innerHTML = liveAndScheduled.map(renderMatchCard).join('') || '<div class="empty-state"><h3>No upcoming IPL matches found</h3></div>';
         document.getElementById('schedule-grid').innerHTML = matches.map(renderMatchCard).join('');
         currentMatches = matches;
     }

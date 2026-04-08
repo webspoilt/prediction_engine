@@ -1257,39 +1257,51 @@ class RealTimePredictor:
                 }
             }
         
+        # ── Walkthrough-Style Live Intelligence (v5.0) ───────────────────
         preds = []
         volatility = "LOW"
         
+        # 1. Strategic Run Projections
         if over > 0:
-            balls_bowled = int(over) * 6 + ((over - int(over)) * 10)
-            proj_score = int(runs + (crr * ((120 - balls_bowled) / 6.0))) if balls_bowled < 120 else runs
-            
-            momentum_txt = "Standard Accumulation"
-            if crr > 9:
-                momentum_txt = "Aggressive Attack"
-                volatility = "HIGH"
-                proj_score += int(10 * (crr / 9.0))
-            elif crr < 6.5:
-                momentum_txt = "Defensive Consolidation"
-                proj_score -= 10
-            
-            preds.append({"factor": "Match Momentum", "prediction": f"{momentum_txt} (~{proj_score} Projected Score)", "confidence": "High"})
+            projected_total = int(runs + (crr * (20.0 - over)))
+            if inning == 1:
+                preds.append({"factor": "Target Projection", "prediction": f"Projecting {projected_total} runs for {batting_team} DNA.", "confidence": "High"})
+            else:
+                target = match_data.get('target', 0)
+                if target:
+                    runs_left = target - runs
+                    balls_left = int((20.0 - over) * 6)
+                    rrr = (runs_left / (balls_left / 6.0)) if balls_left > 0 else 0
+                    preds.append({"factor": "Sovereign Audit", "prediction": f"Needs {runs_left} off {balls_left} balls (RRR: {rrr:.1f}).", "confidence": "Very High"})
+
+        # 2. Key Impact Player / Matchup DNA
+        impact_player = "Middler Order"
+        # Heuristic mapping for star player DNA
+        stars = {"CSK": "Ruturaj Gaikwad", "MI": "Suryakumar Yadav", "RCB": "Virat Kohli", 
+                 "GT": "Shubman Gill", "LSG": "KL Rahul", "DC": "Rishabh Pant",
+                 "KKR": "Andre Russell", "SRH": "Pat Cummins", "RR": "Jos Buttler"}
         
-        if wickets >= 4 and over < 10:
-            preds.append({"factor": "Top Order Health", "prediction": f"Innings collapsing. Extreme pressure on {batting_team} Middle Order.", "confidence": "Very High"})
-            volatility = "VERY HIGH"
-        elif wickets < 2 and over > 10:
-            preds.append({"factor": "Platform Setup", "prediction": "Solid Platform created. Launchpad activated for Death Overs.", "confidence": "Very High"})
+        star_name = stars.get(batting_team, "Top Scorer")
+        if wickets < 3:
+            preds.append({"factor": "Momentum Driver", "prediction": f"{star_name} holds the key to {batting_team}'s acceleration phase.", "confidence": "Moderate"})
         else:
-            preds.append({"factor": "Current Phase", "prediction": "Consolidating wickets while maintaining strike rotation.", "confidence": "Moderate"})
-            
-        if win_prob > 0.75:
-            rec = f"{batting_team} dominates the mathematical necessity. Wait for odds correction to short."
-        elif win_prob < 0.25:
-            rec = f"{batting_team} win probability degraded. Heavy advantage heavily shifts to {bowling_team}."
+            preds.append({"factor": "Resistance DNA", "prediction": f"{batting_team} must stabilize. Lower order tail starts soon.", "confidence": "High"})
+
+        # 3. Tactical Verdict
+        if win_prob > 0.7:
+            verdict = f"{batting_team} is mathematically dominant. Probability lock detected."
+            rec = f"Dominant phase. Best Value on {batting_team} if odds > {(1/win_prob):.2f}."
+        elif win_prob < 0.3:
+            verdict = f"Critical state for {batting_team}. Bowling DNA is overwhelming."
+            rec = f"Market undervalues a {batting_team} comeback. Wait for +8.0 odds for high-risk value."
         else:
-            rec = "Superposition detected. Match is in equilibrium; expect significant momentum shifts on the next wicket."
-            volatility = "HIGH"
+            verdict = "Quantum Superposition. Momentum is in balanced flux."
+            rec = "Fair Value detected. Chasing team holds the historical edge in this over-range."
+
+        preds.append({"factor": "Strategic Verdict", "prediction": verdict, "confidence": "High"})
+
+        # Final volatility logic
+        if crr > 9 or wickets > 3: volatility = "HIGH"
 
         return {
             "predictions": preds,

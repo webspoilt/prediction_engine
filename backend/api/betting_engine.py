@@ -450,11 +450,11 @@ class BettingEngine:
         implied = 1 / offered_odds
         edge = true_prob - implied
         if edge > 0.05:
-            return "Strong Value"
+            return "★ Best Value"
         elif edge > 0:
-            return "Fair"
+            return "Fair Value"
         else:
-            return "Overpriced"
+            return "⚠️ Poor Value"
 
     @staticmethod
     def _calculate_trend(history: List[float]) -> str:

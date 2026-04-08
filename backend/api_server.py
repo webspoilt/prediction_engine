@@ -165,7 +165,9 @@ active_scrapers: Dict[str, asyncio.Task] = {}
 
 # ── Helper: Get Redis client safely ──────────────────────────────────────────
 def get_redis():
-    """Get a Redis client or None if unavailable."""
+    """Get a Redis client or None if unavailable. Strictly honors REDIS_ENABLED."""
+    if not settings.REDIS_ENABLED:
+        return None
     try:
         import redis
         pool = getattr(app.state, "redis_pool", None)
@@ -435,7 +437,8 @@ async def list_matches():
                         "source": "redis",
                     })
         except Exception as e:
-            logger.warning(f"Redis merge (non-critical): {e}")
+            if settings.REDIS_ENABLED:
+                logger.warning(f"Redis merge (non-critical): {e}")
 
     # Enrich with ML predictions (Titan v4.5 — Real-time Enrichment)
     if predictor:

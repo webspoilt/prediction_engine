@@ -2,6 +2,10 @@ import os
 import sys
 from huggingface_hub import HfApi
 import logging
+from dotenv import load_dotenv
+
+# Load environment variables from .env
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

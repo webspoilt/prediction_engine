@@ -96,9 +96,9 @@
         .odds-card .frac-odds { font-size: 11px; color: var(--text-dim); margin-top: 4px; font-family: 'JetBrains Mono'; }
         .odds-card .american-odds { font-size: 13px; color: var(--accent-cyan); margin-top: 2px; font-family: 'JetBrains Mono'; font-weight: 700; }
         .odds-card .value-badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
-        .odds-card .value-badge.strong { background: rgba(16,185,129,0.15); color: var(--accent-emerald); border: 1px solid rgba(16,185,129,0.3); }
         .odds-card .value-badge.fair { background: rgba(99,102,241,0.1); color: var(--accent-titan); border: 1px solid rgba(99,102,241,0.2); }
         .odds-card .value-badge.over { background: rgba(244,63,94,0.1); color: var(--accent-rose); border: 1px solid rgba(244,63,94,0.2); }
+        .odds-card .value-badge.best { background: rgba(16,185,129,0.25); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); box-shadow: 0 0 10px rgba(16,185,129,0.3); font-weight: 900; }
         .ou-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin-bottom: 20px; }
         .ou-cell { background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; font-family: 'JetBrains Mono'; font-size: 12px; }
         .ou-cell .line { color: var(--accent-cyan); font-weight: 800; font-size: 14px; }
@@ -250,7 +250,10 @@
             const teams = Object.keys(winners);
             heroEl.innerHTML = teams.map(team => {
                 const o = winners[team];
-                const valClass = o.value_rating === 'Strong Value' ? 'strong' : o.value_rating === 'Overpriced' ? 'over' : 'fair';
+                let valClass = 'fair';
+                if (o.value_rating.includes('Best')) valClass = 'best';
+                if (o.value_rating.includes('Poor')) valClass = 'over';
+                
                 return `
                     <div class="odds-card">
                         <div class="team-code">${team}</div>
@@ -350,11 +353,13 @@
                 if (prediction.intelligence.predictions) {
                     document.getElementById('intel-predictions').innerHTML = prediction.intelligence.predictions.map(p => {
                         let confColor = p.confidence.toLowerCase() === 'high' || p.confidence.toLowerCase() === 'very high' ? 'var(--accent-emerald)' : 'var(--accent-cyan)';
+                        let labelStyle = p.factor.includes('Sovereign') || p.factor.includes('Verdict') ? 'color:var(--accent-emerald); text-shadow:0 0 10px rgba(16,185,129,0.3); font-weight:800' : 'font-weight:600; color:var(--text-main)';
+                        
                         return `
                         <tr>
-                            <td style="font-weight:600; color:var(--text-main)">${p.factor}</td>
-                            <td style="color:var(--text-dim)">${p.prediction}</td>
-                            <td><span class="badge-conf" style="color:${confColor}">${p.confidence}</span></td>
+                            <td style="${labelStyle}">${p.factor}</td>
+                            <td style="color:var(--text-dim); padding-left:15px">${p.prediction}</td>
+                            <td style="text-align:right"><span class="badge-conf" style="color:${confColor}; font-size:10px">${p.confidence}</span></td>
                         </tr>
                         `;
                     }).join('');

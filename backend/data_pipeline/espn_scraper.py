@@ -19,8 +19,11 @@ class ESPNCricinfoScraper:
     
     def __init__(self, redis_host: str = 'localhost', redis_port: int = 6379, poll_interval: int = 5):
         # We can poll a JSON API every 5 seconds safely without overhead
+        from backend.config import settings
         self.poll_interval = poll_interval
-        self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
+        self.redis_client = None
+        if settings.REDIS_ENABLED:
+            self.redis_client = redis.Redis(host=redis_host, port=redis_port, decode_responses=True)
         self.is_running = False
 
     async def start_polling(self, match_id: str, url: str):
@@ -100,11 +103,17 @@ class ESPNCricinfoScraper:
             logger.debug(f"JSON Structure parsing issue (expected during breaks): {e}")
 
     def _publish_to_redis_sync(self, ball_data: BallData):
-        """Update live match stream and state"""
+        """Update live match stream and state (shielded)"""
+        if not self.redis_client:
+            return
+            
         stream_key = f"ipl:balls:{ball_data.match_id}"
-        self.redis_client.xadd(stream_key, ball_data.to_dict(), maxlen=20) 
-        # Publish to live channel
-        self.redis_client.publish(f"ipl:live:{ball_data.match_id}", json.dumps(ball_data.to_dict()))
+        try:
+            self.redis_client.xadd(stream_key, ball_data.to_dict(), maxlen=20) 
+            # Publish to live channel
+            self.redis_client.publish(f"ipl:live:{ball_data.match_id}", json.dumps(ball_data.to_dict()))
+        except Exception as e:
+            logger.debug(f"Redis publish failed (non-critical): {e}")
 
     def stop(self):
         self.is_running = False

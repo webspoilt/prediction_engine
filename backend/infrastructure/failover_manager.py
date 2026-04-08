@@ -101,7 +101,10 @@ class RedisStateManager:
         }
         
     def connect(self) -> bool:
-        """Establish Redis connections"""
+        """Establish Redis connections (shielded)"""
+        from backend.config import settings
+        if not settings.REDIS_ENABLED:
+            return False
         try:
             self.sync_client = redis.Redis(**self.pool_kwargs)
             self.sync_client.ping()
@@ -112,7 +115,10 @@ class RedisStateManager:
             return False
             
     async def connect_async(self) -> bool:
-        """Establish async Redis connection"""
+        """Establish async Redis connection (shielded)"""
+        from backend.config import settings
+        if not settings.REDIS_ENABLED:
+            return False
         try:
             self.async_client = AsyncRedis(**self.pool_kwargs)
             await self.async_client.ping()
@@ -123,28 +129,33 @@ class RedisStateManager:
     
     # ==================== STREAM OPERATIONS ====================
     
-    def publish_ball(self, match_id: str, ball_data: Dict) -> str:
-        """Publish ball data to Redis Stream"""
+    def publish_ball(self, match_id: str, ball_data: Dict) -> Optional[str]:
+        """Publish ball data to Redis Stream (shielded)"""
+        if not self.sync_client:
+            return None
+            
         stream_key = f"ipl:stream:balls:{match_id}"
         
         # Add timestamp if not present
         if 'timestamp' not in ball_data:
             ball_data['timestamp'] = time.time()
         
-        entry_id = self.sync_client.xadd(
-            stream_key,
-            ball_data,
-            maxlen=10000,  # Keep last 10k balls per match
-            approximate=True
-        )
-        
-        # Also publish to pub/sub for real-time consumers
-        self.sync_client.publish(
-            f"ipl:live:{match_id}",
-            json.dumps(ball_data)
-        )
-        
-        return entry_id
+        try:
+            entry_id = self.sync_client.xadd(
+                stream_key,
+                ball_data,
+                maxlen=10000,  # Keep last 10k balls per match
+                approximate=True
+            )
+            
+            # Also publish to pub/sub for real-time consumers
+            self.sync_client.publish(
+                f"ipl:live:{match_id}",
+                json.dumps(ball_data)
+            )
+            return entry_id
+        except Exception:
+            return None
     
     def get_recent_balls(self, match_id: str, count: int = 18) -> List[Dict]:
         """Get recent balls for a match"""
@@ -216,7 +227,10 @@ class RedisStateManager:
     # ==================== HEALTH & MONITORING ====================
     
     def record_heartbeat(self, component: str, metadata: Dict = None):
-        """Record component heartbeat"""
+        """Record component heartbeat (shielded)"""
+        if not self.sync_client:
+            return
+            
         key = f"ipl:heartbeat:{component}"
         data = {
             'timestamp': time.time(),
@@ -225,8 +239,11 @@ class RedisStateManager:
         if metadata:
             data.update(metadata)
         
-        self.sync_client.hset(key, mapping=data)
-        self.sync_client.expire(key, 60)  # 60 second TTL
+        try:
+            self.sync_client.hset(key, mapping=data)
+            self.sync_client.expire(key, 60)  # 60 second TTL
+        except Exception:
+            pass
     
     def check_heartbeat(self, component: str, max_age: int = 30) -> bool:
         """Check if component heartbeat is recent"""

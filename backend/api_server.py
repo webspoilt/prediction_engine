@@ -86,7 +86,24 @@ async def lifespan(app: FastAPI):
             logger.error(f"❌ MultiSourceFetcher init failed: {e}")
 
         # 2. Database & Redis (optional — degrades gracefully)
-        # ... (db/redis init remains same or backgrounded)
+        if settings.REDIS_ENABLED:
+            try:
+                import redis
+                app.state.redis_pool = redis.ConnectionPool(
+                    host=settings.REDIS_HOST,
+                    port=settings.REDIS_PORT,
+                    db=settings.REDIS_DB,
+                    password=settings.REDIS_PASSWORD,
+                    decode_responses=True,
+                    socket_connect_timeout=2
+                )
+                logger.info("✅ Redis Connection Pool initialized")
+            except Exception as e:
+                logger.warning(f"⚠️ Redis init failed (non-critical): {e}")
+                app.state.redis_pool = None
+        else:
+            app.state.redis_pool = None
+            logger.info("ℹ️ Redis disabled via settings (Memory-only mode)")
         
         # 3. BACKGROUND WARMUP: ML Engine & Discovery
         async def warmup():
